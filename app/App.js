@@ -1,40 +1,42 @@
-// App.js
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React, { useContext, useEffect, useState } from 'react';
-import { StatusBar } from 'react-native';
+import { AppState, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-// Screens
+import { AuthContext, AuthProvider } from './context/AuthContext';
+
 import AlertScreen from './components/AlertScreen';
 import BottomNavBar from './components/BottomNavBar';
 import HistoryScreen from './components/HistoryScreen';
 import HomeScreen from './components/HomeScreen';
 import LoginScreen from './components/LoginScreen';
+import PinScreen from './components/PinScreen';
 import ProfileScreen from './components/ProfileScreen';
 import SearchScreen from './components/SearchScreen';
 import SplashScreen from './components/SplashScreen';
 
-// ✅ Auth context
-import { AuthContext, AuthProvider } from './context/AuthContext';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 const Tab = createBottomTabNavigator();
 
-// 🔁 MainApp that reacts to auth context
 const MainApp = () => {
-  const { user } = useContext(AuthContext);
+  const { user, pinRequired, resetInactivityTimer } = useContext(AuthContext);
   const [showSplash, setShowSplash] = useState(true);
   const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') resetInactivityTimer?.();
+    });
+    return () => sub.remove();
+  }, []);
+
+  const handleUserTouch = () => {
+    resetInactivityTimer?.();
+  };
+
+  useEffect(() => {
     if (!showSplash && !appReady) {
-      const initializeApp = async () => {
-        try {
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } finally {
-          setAppReady(true);
-        }
-      };
-      initializeApp();
+      setTimeout(() => setAppReady(true), 300);
     }
   }, [showSplash, appReady]);
 
@@ -42,28 +44,33 @@ const MainApp = () => {
     return <SplashScreen onAnimationComplete={() => setShowSplash(false)} />;
   }
 
+  if (pinRequired && user) return <PinScreen />;
+
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle="light-content" backgroundColor="#1A1A2E" />
-      {!user ? (
-        <LoginScreen />
-      ) : (
-        <Tab.Navigator
-          tabBar={(props) => <BottomNavBar {...props} />}
-          screenOptions={{ headerShown: false }}
-        >
-          <Tab.Screen name="Home" component={HomeScreen} />
-          <Tab.Screen name="Alerts" component={AlertScreen} />
-          <Tab.Screen name="Search" component={SearchScreen} />
-          <Tab.Screen name="History" component={HistoryScreen} />
-          <Tab.Screen name="Profile" component={ProfileScreen} />
-        </Tab.Navigator>
-      )}
+      <TouchableWithoutFeedback onPress={handleUserTouch} onTouchStart={handleUserTouch}>
+        <View style={{ flex: 1 }}>
+          {!user ? (
+            <LoginScreen />
+          ) : (
+            <Tab.Navigator
+              tabBar={(props) => <BottomNavBar {...props} />}
+              screenOptions={{ headerShown: false }}
+            >
+              <Tab.Screen name="Home" component={HomeScreen} />
+              <Tab.Screen name="Alerts" component={AlertScreen} />
+              <Tab.Screen name="Search" component={SearchScreen} />
+              <Tab.Screen name="History" component={HistoryScreen} />
+              <Tab.Screen name="Profile" component={ProfileScreen} />
+            </Tab.Navigator>
+          )}
+        </View>
+      </TouchableWithoutFeedback>
     </SafeAreaProvider>
   );
 };
 
-// 🔁 Wrap with AuthProvider to make context work globally
+// Do not add NavigationContainer here if using DOM or another setup
 export default function App() {
   return (
     <AuthProvider>

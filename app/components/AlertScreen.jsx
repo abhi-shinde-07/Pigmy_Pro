@@ -15,7 +15,7 @@ const { width } = Dimensions.get('window');
 
 const AlertScreen = () => {
   const [activeTab, setActiveTab] = useState('all');
-
+  
   const notifications = [
     {
       id: 1,

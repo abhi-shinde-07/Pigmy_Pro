@@ -1,8 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { AuthContext } from '../context/AuthContext';
-
 import {
-  Dimensions,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -10,13 +7,12 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
-
-const { width } = Dimensions.get('window');
+import { AuthContext } from '../context/AuthContext';
 
 const HomeScreen = () => {
-  const { user } = useContext(AuthContext);
+  const { user, resetInactivityTimer } = useContext(AuthContext);
   const [refreshing, setRefreshing] = useState(false);
   const [balance, setBalance] = useState(25430.50);
   const [recentTransactions, setRecentTransactions] = useState([
@@ -47,7 +43,7 @@ const HomeScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
-
+      
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -59,12 +55,14 @@ const HomeScreen = () => {
         </TouchableOpacity>
       </View>
 
+      {/* Main Scrollable Content */}
       <ScrollView
-        style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={resetInactivityTimer}
+        onTouchStart={resetInactivityTimer}
       >
         {/* Balance Card */}
         <View style={styles.balanceCard}>
@@ -153,10 +151,7 @@ const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1a1a2e',
-  },
+  container: { flex: 1, backgroundColor: '#1a1a2e' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -165,30 +160,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  welcomeText: {
-    fontSize: 14,
-    color: '#8B8B9B',
-  },
-  userName: {
-    fontSize: 20,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    marginTop: 2,
-  },
+  welcomeText: { fontSize: 14, color: '#8B8B9B' },
+  userName: { fontSize: 20, color: '#FFFFFF', fontWeight: '600', marginTop: 2 },
   notificationButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#2a2a3e',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#2a2a3e', justifyContent: 'center', alignItems: 'center',
   },
-  notificationIcon: {
-    fontSize: 18,
-  },
-  scrollView: {
-    flex: 1,
-  },
+  notificationIcon: { fontSize: 18 },
   balanceCard: {
     backgroundColor: '#3B82F6',
     margin: 20,
@@ -216,24 +194,15 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 20,
   },
-  cardActions: {
-    flexDirection: 'row',
-  },
+  cardActions: { flexDirection: 'row' },
   actionButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  actionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  section: {
-    marginHorizontal: 20,
-    marginBottom: 24,
-  },
+  actionButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  section: { marginHorizontal: 20, marginBottom: 24 },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -246,19 +215,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 16,
   },
-  viewAllText: {
-    color: '#3B82F6',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  quickActionItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
+  viewAllText: { color: '#3B82F6', fontSize: 14, fontWeight: '500' },
+  quickActionsGrid: { flexDirection: 'row', justifyContent: 'space-between' },
+  quickActionItem: { alignItems: 'center', flex: 1 },
   quickActionIcon: {
     width: 56,
     height: 56,
@@ -267,14 +226,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  quickActionEmoji: {
-    fontSize: 24,
-  },
-  quickActionTitle: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
+  quickActionEmoji: { fontSize: 24 },
+  quickActionTitle: { fontSize: 12, color: '#FFFFFF', textAlign: 'center' },
   transactionsContainer: {
     backgroundColor: '#2a2a3e',
     borderRadius: 16,
@@ -288,11 +241,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#3f3f5f',
   },
-  transactionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
+  transactionLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   transactionIcon: {
     width: 40,
     height: 40,
@@ -301,32 +250,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  transactionIconText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  transactionDetails: {
-    flex: 1,
-  },
+  transactionIconText: { color: '#FFFFFF', fontSize: 18, fontWeight: '600' },
+  transactionDetails: { flex: 1 },
   transactionDescription: {
     fontSize: 14,
     color: '#FFFFFF',
     fontWeight: '500',
     marginBottom: 2,
   },
-  transactionDate: {
-    fontSize: 12,
-    color: '#8B8B9B',
-  },
-  transactionAmount: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  servicesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
+  transactionDate: { fontSize: 12, color: '#8B8B9B' },
+  transactionAmount: { fontSize: 14, fontWeight: '600' },
+  servicesContainer: { flexDirection: 'row', justifyContent: 'space-between' },
   serviceItem: {
     alignItems: 'center',
     backgroundColor: '#2a2a3e',
@@ -335,15 +269,8 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 4,
   },
-  serviceIcon: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  serviceTitle: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
+  serviceIcon: { fontSize: 24, marginBottom: 8 },
+  serviceTitle: { fontSize: 12, color: '#FFFFFF', textAlign: 'center' },
 });
 
 export default HomeScreen;
