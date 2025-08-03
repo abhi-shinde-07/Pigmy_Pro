@@ -1,5 +1,14 @@
-import { useState } from 'react';
-
+import {
+  faCheckCircle,
+  faClock,
+  faGift,
+  faHourglassHalf,
+  faReceipt,
+  faTimesCircle,
+  faUniversity
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import React, { useState } from 'react';
 import {
   Dimensions,
   RefreshControl,
@@ -14,170 +23,160 @@ import {
 
 const { width } = Dimensions.get('window');
 
-// Theme Configuration
-const theme = {
-  colors: {
-    background: '#1a1a2e',
-    surface: '#2a2a3e',
-    surfaceElevated: '#3f3f5f',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#8B8B9B',
-    textTertiary: '#6B7280',
-    primary: '#3B82F6',
-    success: '#34C759',
-    error: '#FF3B30',
-    warning: '#FF9500',
-    border: '#2a2a3e',
-    card: '#2a2a3e',
+// Sample transaction data matching HomeScreen structure
+const transactionHistory = {
+  "statusCode": 200,
+  "data": {
+    "transactions": [
+      {
+        "id": "TXN001",
+        "type": "credit",
+        "amount": 15000,
+        "description": "Commission Payment - July",
+        "date": "2025-07-31",
+        "time": "09:30 AM",
+        "status": "completed",
+        "category": "commission",
+        "reference": "COM202507001",
+        "customerName": "Rajesh Sharma",
+        "accountNumber": "****5678"
+      },
+      {
+        "id": "TXN002",
+        "type": "credit",
+        "amount": 8500,
+        "description": "New Account Opening Bonus",
+        "date": "2025-07-30",
+        "time": "02:15 PM",
+        "status": "completed",
+        "category": "bonus",
+        "reference": "BON202507002",
+        "customerName": "Priya Patel",
+        "accountNumber": "****3421"
+      },
+      {
+        "id": "TXN003",
+        "type": "credit",
+        "amount": 12000,
+        "description": "Loan Collection Commission",
+        "date": "2025-07-29",
+        "time": "11:45 AM",
+        "status": "completed",
+        "category": "commission",
+        "reference": "LCC202507003",
+        "customerName": "Amit Kumar",
+        "accountNumber": "****7890"
+      },
+      {
+        "id": "TXN004",
+        "type": "credit",
+        "amount": 5500,
+        "description": "Insurance Sale Commission",
+        "date": "2025-07-28",
+        "time": "04:20 PM",
+        "status": "completed",
+        "category": "commission",
+        "reference": "INS202507004",
+        "customerName": "Sunita Singh",
+        "accountNumber": "****2345"
+      },
+      {
+        "id": "TXN005",
+        "type": "credit",
+        "amount": 7200,
+        "description": "Fixed Deposit Commission",
+        "date": "2025-07-27",
+        "time": "10:30 AM",
+        "status": "completed",
+        "category": "commission",
+        "reference": "FDC202507005",
+        "customerName": "Rohit Gupta",
+        "accountNumber": "****6789"
+      },
+      {
+        "id": "TXN006",
+        "type": "credit",
+        "amount": 3500,
+        "description": "Referral Bonus",
+        "date": "2025-07-26",
+        "time": "03:45 PM",
+        "status": "completed",
+        "category": "bonus",
+        "reference": "REF202507006",
+        "customerName": "Neha Joshi",
+        "accountNumber": "****4567"
+      },
+      {
+        "id": "TXN007",
+        "type": "credit",
+        "amount": 9800,
+        "description": "Monthly Target Achievement",
+        "date": "2025-07-25",
+        "time": "12:15 PM",
+        "status": "completed",
+        "category": "bonus",
+        "reference": "TGT202507007",
+        "customerName": "System Generated",
+        "accountNumber": "****0000"
+      },
+      {
+        "id": "TXN008",
+        "type": "credit",
+        "amount": 6300,
+        "description": "Credit Card Application Fee",
+        "date": "2025-07-24",
+        "time": "05:30 PM",
+        "status": "pending",
+        "category": "commission",
+        "reference": "CCA202507008",
+        "customerName": "Vikash Mehta",
+        "accountNumber": "****8901"
+      },
+      {
+        "id": "TXN009",
+        "type": "credit",
+        "amount": 4200,
+        "description": "Account Maintenance Fee",
+        "date": "2025-07-23",
+        "time": "09:00 AM",
+        "status": "completed",
+        "category": "fee",
+        "reference": "AMF202507009",
+        "customerName": "Kavita Sharma",
+        "accountNumber": "****1234"
+      },
+      {
+        "id": "TXN010",
+        "type": "credit",
+        "amount": 11500,
+        "description": "Loan Processing Commission",
+        "date": "2025-07-22",
+        "time": "01:45 PM",
+        "status": "processing",
+        "category": "commission",
+        "reference": "LPC202507010",
+        "customerName": "Manoj Singh",
+        "accountNumber": "****5678"
+      }
+    ],
+    "summary": {
+      "totalEarnings": 83500,
+      "thisMonth": 51500,
+      "pendingAmount": 6300,
+      "completedTransactions": 8,
+      "pendingTransactions": 1,
+      "processingTransactions": 1
+    }
   },
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
-    '2xl': 24,
-  },
-  borderRadius: {
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
-  },
-  typography: {
-    h1: { fontSize: 24, fontWeight: '700' },
-    h2: { fontSize: 20, fontWeight: '600' },
-    h3: { fontSize: 18, fontWeight: '600' },
-    h4: { fontSize: 16, fontWeight: '600' },
-    body: { fontSize: 16, fontWeight: '400' },
-    caption: { fontSize: 12, fontWeight: '400' },
-    label: { fontSize: 10, fontWeight: '600' },
-  },
+  "message": "Transaction history retrieved successfully",
+  "success": true
 };
 
 const HistoryScreen = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
 
-  const filters = [
-    { id: 'all', title: 'All' },
-    { id: 'credit', title: 'Credit' },
-    { id: 'debit', title: 'Debit' },
-    { id: 'pending', title: 'Pending' },
-  ];
-
-  const transactions = [
-    {
-      id: 1,
-      type: 'credit',
-      amount: 5000,
-      description: 'Salary Credit',
-      date: '2025-07-30',
-      time: '09:30 AM',
-      status: 'completed',
-      category: 'Income',
-      reference: 'TXN123456789',
-    },
-    {
-      id: 2,
-      type: 'debit',
-      amount: 1200,
-      description: 'Online Shopping - Amazon',
-      date: '2025-07-29',
-      time: '02:15 PM',
-      status: 'completed',
-      category: 'Shopping',
-      reference: 'TXN123456788',
-    },
-    {
-      id: 3,
-      type: 'credit',
-      amount: 800,
-      description: 'Transfer from John Smith',
-      date: '2025-07-29',
-      time: '11:45 AM',
-      status: 'completed',
-      category: 'Transfer',
-      reference: 'TXN123456787',
-    },
-    {
-      id: 4,
-      type: 'debit',
-      amount: 150,
-      description: 'ATM Withdrawal',
-      date: '2025-07-28',
-      time: '06:20 PM',
-      status: 'completed',
-      category: 'Cash',
-      reference: 'TXN123456786',
-    },
-    {
-      id: 5,
-      type: 'debit',
-      amount: 2500,
-      description: 'Electricity Bill Payment',
-      date: '2025-07-28',
-      time: '10:30 AM',
-      status: 'completed',
-      category: 'Bills',
-      reference: 'TXN123456785',
-    },
-    {
-      id: 6,
-      type: 'credit',
-      amount: 300,
-      description: 'Cashback Reward',
-      date: '2025-07-27',
-      time: '03:45 PM',
-      status: 'completed',
-      category: 'Reward',
-      reference: 'TXN123456784',
-    },
-    {
-      id: 7,
-      type: 'debit',
-      amount: 45,
-      description: 'Coffee Shop',
-      date: '2025-07-27',
-      time: '08:15 AM',
-      status: 'completed',
-      category: 'Food',
-      reference: 'TXN123456783',
-    },
-    {
-      id: 8,
-      type: 'debit',
-      amount: 350,
-      description: 'Gas Station',
-      date: '2025-07-26',
-      time: '05:30 PM',
-      status: 'completed',
-      category: 'Transport',
-      reference: 'TXN123456782',
-    },
-    {
-      id: 9,
-      type: 'credit',
-      amount: 1500,
-      description: 'Freelance Payment',
-      date: '2025-07-26',
-      time: '12:00 PM',
-      status: 'completed',
-      category: 'Income',
-      reference: 'TXN123456781',
-    },
-    {
-      id: 10,
-      type: 'debit',
-      amount: 89,
-      description: 'Grocery Store',
-      date: '2025-07-25',
-      time: '07:45 PM',
-      status: 'pending',
-      category: 'Food',
-      reference: 'TXN123456780',
-    },
-  ];
+  // Removed filters
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -187,15 +186,10 @@ const HistoryScreen = () => {
     }, 2000);
   };
 
-  const filteredTransactions = transactions.filter(transaction => {
-    if (selectedFilter === 'all') return true;
-    if (selectedFilter === 'pending') return transaction.status === 'pending';
-    return transaction.type === selectedFilter;
-  });
+  const filteredTransactions = transactionHistory.data.transactions;
 
-  const formatAmount = (amount, type) => {
-    const formattedAmount = `₹${amount.toLocaleString()}`;
-    return type === 'credit' ? `+${formattedAmount}` : `-${formattedAmount}`;
+  const formatAmount = (amount) => {
+    return `₹${amount.toLocaleString('en-IN')}`;
   };
 
   const formatDate = (dateString) => {
@@ -211,115 +205,119 @@ const HistoryScreen = () => {
     } else {
       return date.toLocaleDateString('en-IN', { 
         day: 'numeric', 
-        month: 'short', 
-        year: 'numeric' 
+        month: 'short'
       });
     }
   };
 
-  const getTransactionIcon = (category) => {
+  const getCategoryIcon = (category) => {
     const iconMap = {
-      Income: '💰',
-      Shopping: '🛒',
-      Transfer: '💸',
-      Cash: '🏧',
-      Bills: '📄',
-      Reward: '🎁',
-      Food: '🍔',
-      Transport: '⛽',
+      commission: faUniversity,
+      bonus: faGift,
+      fee: faReceipt,
     };
-    return iconMap[category] || '💳';
+    return iconMap[category] || faReceipt;
+  };
+
+  const getStatusIcon = (status) => {
+    const statusMap = {
+      completed: faCheckCircle,
+      pending: faHourglassHalf,
+      processing: faClock,
+      failed: faTimesCircle,
+    };
+    return statusMap[status] || faCheckCircle;
   };
 
   const getStatusColor = (status) => {
-    return status === 'pending' ? theme.colors.warning : theme.colors.success;
+    const colorMap = {
+      completed: '#22C55E',
+      pending: '#F59E0B',
+      processing: '#3B82F6',
+      failed: '#EF4444',
+    };
+    return colorMap[status] || '#22C55E';
+  };
+
+  const getCategoryColor = (category) => {
+    const colorMap = {
+      commission: '#6739B7',
+      bonus: '#10B981',
+      fee: '#8B5CF6',
+    };
+    return colorMap[category] || '#6739B7';
   };
 
   const TransactionItem = ({ transaction }) => (
-    <TouchableOpacity style={styles.transactionItem}>
+    <TouchableOpacity style={styles.transactionItem} activeOpacity={0.7}>
       <View style={styles.transactionLeft}>
         <View style={styles.iconContainer}>
-          <Text style={styles.icon}>{getTransactionIcon(transaction.category)}</Text>
+          <FontAwesomeIcon 
+            icon={faUniversity} 
+            size={20} 
+            color="#6739B7" 
+          />
         </View>
         <View style={styles.transactionDetails}>
-          <Text style={styles.description}>{transaction.description}</Text>
-          <Text style={styles.category}>{transaction.category}</Text>
+          <Text style={styles.customerName} numberOfLines={1}>
+            {transaction.customerName}
+          </Text>
           <Text style={styles.dateTime}>
             {formatDate(transaction.date)} • {transaction.time}
           </Text>
         </View>
       </View>
       <View style={styles.transactionRight}>
-        <Text style={[
-          styles.amount,
-          { color: transaction.type === 'credit' ? theme.colors.success : theme.colors.error }
-        ]}>
-          {formatAmount(transaction.amount, transaction.type)}
+        <Text style={styles.amount}>
+          + {formatAmount(transaction.amount)}
         </Text>
-        <View style={[
-          styles.statusBadge,
-          { backgroundColor: getStatusColor(transaction.status) }
-        ]}>
-          <Text style={styles.statusText}>
-            {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
-          </Text>
-        </View>
       </View>
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Transaction History</Text>
       </View>
 
-      {/* Filter Tabs */}
-      <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {filters.map((filter) => (
-            <TouchableOpacity
-              key={filter.id}
-              style={[
-                styles.filterTab,
-                selectedFilter === filter.id && styles.activeFilterTab
-              ]}
-              onPress={() => setSelectedFilter(filter.id)}
-            >
-              <Text style={[
-                styles.filterText,
-                selectedFilter === filter.id && styles.activeFilterText
-              ]}>
-                {filter.title}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+
 
       {/* Transaction List */}
       <ScrollView
         style={styles.transactionList}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            colors={['#6739B7']}
+            tintColor="#6739B7"
+          />
         }
         showsVerticalScrollIndicator={false}
       >
         {filteredTransactions.length > 0 ? (
-          filteredTransactions.map((transaction) => (
-            <TransactionItem key={transaction.id} transaction={transaction} />
-          ))
+          <>
+            {filteredTransactions.map((transaction) => (
+              <TransactionItem key={transaction.id} transaction={transaction} />
+            ))}
+          </>
         ) : (
           <View style={styles.emptyState}>
+            <View style={styles.emptyIconContainer}>
+              <FontAwesomeIcon icon={faReceipt} size={48} color="#E5E7EB" />
+            </View>
             <Text style={styles.emptyStateText}>No transactions found</Text>
             <Text style={styles.emptyStateSubtext}>
-              Try changing your filter or pull to refresh
+              Pull to refresh for latest transactions
             </Text>
           </View>
         )}
+        
+        <View style={styles.bottomPadding} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -328,67 +326,45 @@ const HistoryScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#F8FAFC',
   },
   header: {
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: theme.spacing.xl,
-    paddingTop: 50,
-    paddingBottom: theme.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+     backgroundColor: '#6739B7',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   headerTitle: {
-    ...theme.typography.h3,
-    color: theme.colors.textPrimary,
-  },
-  filterContainer: {
-    backgroundColor: theme.colors.background,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  filterTab: {
-    paddingHorizontal: theme.spacing.xl,
-    paddingVertical: theme.spacing.sm,
-    marginRight: theme.spacing.md,
-    borderRadius: theme.borderRadius.xl,
-    backgroundColor: theme.colors.surface,
-  },
-  activeFilterTab: {
-    backgroundColor: theme.colors.primary,
-  },
-  filterText: {
-    ...theme.typography.body,
-    fontSize: 14,
+    fontSize: 18,
+    color: '#FFFFFF',
     fontWeight: '600',
-    color: theme.colors.textSecondary,
-  },
-  activeFilterText: {
-    color: theme.colors.textPrimary,
+    fontFamily: 'DMSans-Regular',
   },
   transactionList: {
     flex: 1,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: 20,
   },
   transactionItem: {
-    backgroundColor: theme.colors.card,
-    padding: theme.spacing.lg,
-    marginVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
+    marginTop:14,
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    marginBottom: 8,
+    borderRadius: 16,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F8FAFC',
   },
   transactionLeft: {
     flexDirection: 'row',
@@ -396,68 +372,68 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.colors.surface,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: 'rgba(103, 57, 183, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: theme.spacing.md,
-  },
-  icon: {
-    fontSize: 20,
+    marginRight: 12,
   },
   transactionDetails: {
     flex: 1,
   },
-  description: {
-    ...theme.typography.body,
-    color: theme.colors.textPrimary,
+  customerName: {
+    fontSize: 15,
     fontWeight: '600',
-    marginBottom: 2,
-  },
-  category: {
-    ...theme.typography.caption,
-    color: theme.colors.textSecondary,
-    marginBottom: 2,
+    color: '#1F2937',
+    fontFamily: 'DMSans-Regular',
+    marginBottom: 4,
   },
   dateTime: {
-    ...theme.typography.caption,
-    color: theme.colors.textTertiary,
+    fontSize: 13,
+    color: '#6B7280',
+    fontFamily: 'DMSans-Regular',
   },
   transactionRight: {
     alignItems: 'flex-end',
   },
   amount: {
-    ...theme.typography.body,
+    fontSize: 16,
     fontWeight: '700',
-    marginBottom: 4,
-  },
-  statusBadge: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 2,
-    borderRadius: theme.borderRadius.sm,
-  },
-  statusText: {
-    ...theme.typography.label,
-    color: theme.colors.textPrimary,
+    color: '#22C55E',
+    fontFamily: 'DMSans-Regular',
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: 80,
+  },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   emptyStateText: {
-    ...theme.typography.h3,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.sm,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#6B7280',
+    fontFamily: 'DMSans-Regular',
+    marginBottom: 8,
   },
   emptyStateSubtext: {
-    ...theme.typography.body,
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#9CA3AF',
     textAlign: 'center',
+    fontFamily: 'DMSans-Regular',
+  },
+  bottomPadding: {
+    height: 20,
   },
 });
 

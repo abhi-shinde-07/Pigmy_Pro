@@ -1,5 +1,20 @@
-import React, { useContext, useState } from 'react';
 import {
+  faBell,
+  faBuilding,
+  faCalendarDay,
+  faChartLine,
+  faCheckCircle,
+  faClockRotateLeft,
+  faDownload,
+  faUpload,
+  faUser,
+  faUsers
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Dimensions,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -9,140 +24,268 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { AuthContext } from '../context/AuthContext';
+
+const { width } = Dimensions.get('window');
+
+// Sample JSON data (in real app, this would come from API)
+const dashboardData = {
+  "statusCode": 200,
+  "data": {
+    "agentInfo": {
+      "agentname": "ram",
+      "agentno": "9822475463",
+      "mobileNumber": "9822475463"
+    },
+    "patsansthaInfo": {
+      "patname": "PuneUrban",
+      "fullname": "Pune Urban Cooperative Bank",
+      "message": null,
+      "messageUpdatedAt": null
+    },
+    "currentCollection": {
+      "agentMeta": {
+        "lastAccountNo": "000004",
+        "limitAmount": 500000,
+        "hr": 72,
+        "password": "12341234"
+      },
+      "agentNo": "9822475463",
+      "submitted": false,
+      "submittedAt": null,
+      "downloaded": false,
+      "transactions": [
+        {
+          "accountNo": "000005",
+          "name": "Dalvi A P",
+          "prevBalance": 1200,
+          "openingDate": "12.05.04",
+          "mobileNumber": "9811122233",
+          "collAmt": 100,
+          "time": "09:00",
+          "date": "2025-07-31"
+        },
+        {
+          "accountNo": "000006",
+          "name": "Mali V S",
+          "prevBalance": 900,
+          "openingDate": "22.06.04",
+          "mobileNumber": "9823344556",
+          "collAmt": 200,
+          "time": "09:05",
+          "date": "2025-07-31"
+        },
+        {
+          "accountNo": "000007",
+          "name": "Deshmukh T R",
+          "prevBalance": 3300,
+          "openingDate": "30.04.04",
+          "mobileNumber": "9876611223",
+          "collAmt": 300,
+          "time": "09:10",
+          "date": "2025-07-31"
+        },
+        {
+          "accountNo": "000008",
+          "name": "Jadhav R B",
+          "prevBalance": 2100,
+          "openingDate": "18.07.04",
+          "mobileNumber": "9832211234",
+          "collAmt": 100,
+          "time": "09:15",
+          "date": "2025-07-31"
+        },
+        {
+          "accountNo": "000009",
+          "name": "Gaikwad N M",
+          "prevBalance": 750,
+          "openingDate": "08.08.04",
+          "mobileNumber": "9765543321",
+          "collAmt": 200,
+          "time": "09:20",
+          "date": "2025-07-31"
+        }
+      ]
+    },
+    "totalTransactions": 20,
+    "collectionStatus": {
+      "totalTransactions": 20,
+      "totalCollected": 4000,
+      "submitted": false,
+      "submittedAt": null,
+      "agentMeta": {
+        "lastAccountNo": "000004",
+        "limitAmount": 500000,
+        "hr": 72,
+        "password": "12341234"
+      }
+    },
+    "hasDataToWork": true
+  },
+  "message": "Dashboard data retrieved successfully",
+  "success": true
+};
+
+// Bank Logo Component (similar to PhonePe style)
+const BankLogo = () => (
+  <View style={styles.bankLogoContainer}>
+    <View style={styles.bankLogo}>
+      <FontAwesomeIcon icon={faBuilding} size={24} color="#FFFFFF" />
+    </View>
+  </View>
+);
 
 const HomeScreen = () => {
-  const { user, resetInactivityTimer } = useContext(AuthContext);
   const [refreshing, setRefreshing] = useState(false);
-  const [balance, setBalance] = useState(25430.50);
-  const [recentTransactions, setRecentTransactions] = useState([
-    { id: 1, type: 'credit', amount: 2500, description: 'Salary Credit', date: '2025-07-29', time: '09:30 AM' },
-    { id: 2, type: 'debit', amount: 150, description: 'ATM Withdrawal', date: '2025-07-28', time: '02:15 PM' },
-    { id: 3, type: 'credit', amount: 500, description: 'Transfer from John', date: '2025-07-27', time: '11:45 AM' },
-    { id: 4, type: 'debit', amount: 45, description: 'Online Shopping', date: '2025-07-26', time: '06:20 PM' },
-  ]);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate API call
+    setTimeout(() => {
+      setData(dashboardData.data);
+      setLoading(false);
+    }, 1000);
+  }, []);
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
+    // Simulate API refresh
     setTimeout(() => {
       setRefreshing(false);
     }, 2000);
   }, []);
 
-  const quickActions = [
-    { id: 1, title: 'Transfer', icon: '💸', color: '#3B82F6' },
-    { id: 2, title: 'Pay Bills', icon: '📄', color: '#10B981' },
-    { id: 3, title: 'Recharge', icon: '📱', color: '#F59E0B' },
-    { id: 4, title: 'Loans', icon: '🏦', color: '#8B5CF6' },
-  ];
-
   const formatCurrency = (amount) => {
-    return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    return `₹${amount.toLocaleString('en-IN')}`;
   };
+
+  const getCollectedCustomers = () => {
+    if (!data?.currentCollection?.transactions) return 0;
+    return data.currentCollection.transactions.filter(t => t.collAmt > 0).length;
+  };
+
+  const getRemainingCustomers = () => {
+    if (!data) return 0;
+    return data.totalTransactions - getCollectedCustomers();
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6739B7" />
+          <Text style={styles.loadingText}>Loading Dashboard...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
+      <StatusBar barStyle="light-content" backgroundColor="#6739B7" />
       
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.welcomeText}>Welcome back,</Text>
-          <Text style={styles.userName}>{user?.name || 'John Doe'}</Text>
+        {/* Bank Info Section */}
+        <View style={styles.bankInfoSection}>
+          <View style={styles.bankInfo}>
+            <BankLogo />
+            <View style={styles.bankDetails}>
+              <Text style={styles.bankName}>{data?.patsansthaInfo?.fullname}</Text>
+              <Text style={styles.bankCode}>{data?.patsansthaInfo?.patname}</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.notificationButton}>
+            <FontAwesomeIcon icon={faBell} size={18} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.notificationButton}>
-          <Text style={styles.notificationIcon}>🔔</Text>
-        </TouchableOpacity>
+
+        {/* Agent Info */}
+        <View style={styles.agentInfo}>
+          <View style={styles.agentAvatar}>
+            <FontAwesomeIcon icon={faUser} size={16} color="#6739B7" />
+          </View>
+          <View>
+            <Text style={styles.agentName}>Agent: {data?.agentInfo?.agentname?.toUpperCase()}</Text>
+            <Text style={styles.agentNumber}>ID: {data?.agentInfo?.agentno}</Text>
+          </View>
+        </View>
       </View>
 
-      {/* Main Scrollable Content */}
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 40 }}
+      <ScrollView 
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        keyboardShouldPersistTaps="handled"
-        onScrollBeginDrag={resetInactivityTimer}
-        onTouchStart={resetInactivityTimer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
-        {/* Balance Card */}
-        <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Current Balance</Text>
-          <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
-          <Text style={styles.accountNumber}>Account: {user?.accountNumber || '****1234'}</Text>
-          <View style={styles.cardActions}>
+        {/* Today's Collection Card */}
+        <View style={styles.collectionCard}>
+          <View style={styles.collectionHeader}>
+            <FontAwesomeIcon icon={faCalendarDay} size={20} color="#6739B7" />
+            <Text style={styles.collectionHeaderText}>Today's Collection</Text>
+          </View>
+          <Text style={styles.collectionAmount}>
+            {formatCurrency(data?.collectionStatus?.totalCollected || 0)}
+          </Text>
+          <Text style={styles.collectionSubtext}>
+            From {getCollectedCustomers()} customers
+          </Text>
+          
+          <View style={styles.collectionActions}>
             <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>View Statement</Text>
+              <FontAwesomeIcon icon={faUpload} size={16} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>Submit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]}>
+              <FontAwesomeIcon icon={faDownload} size={16} color="#6739B7" />
+              <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>Download</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsGrid}>
-            {quickActions.map((action) => (
-              <TouchableOpacity key={action.id} style={styles.quickActionItem}>
-                <View style={[styles.quickActionIcon, { backgroundColor: action.color }]}>
-                  <Text style={styles.quickActionEmoji}>{action.icon}</Text>
-                </View>
-                <Text style={styles.quickActionTitle}>{action.title}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Recent Transactions */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.transactionsContainer}>
-            {recentTransactions.map((transaction) => (
-              <View key={transaction.id} style={styles.transactionItem}>
-                <View style={styles.transactionLeft}>
-                  <View style={[
-                    styles.transactionIcon,
-                    { backgroundColor: transaction.type === 'credit' ? '#10B981' : '#EF4444' }
-                  ]}>
-                    <Text style={styles.transactionIconText}>
-                      {transaction.type === 'credit' ? '↓' : '↑'}
-                    </Text>
-                  </View>
-                  <View style={styles.transactionDetails}>
-                    <Text style={styles.transactionDescription}>{transaction.description}</Text>
-                    <Text style={styles.transactionDate}>{transaction.date} • {transaction.time}</Text>
-                  </View>
-                </View>
-                <Text style={[
-                  styles.transactionAmount,
-                  { color: transaction.type === 'credit' ? '#10B981' : '#EF4444' }
-                ]}>
-                  {transaction.type === 'credit' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                </Text>
+        {/* Dashboard Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statsRow}>
+            {/* Total Customers */}
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: '#EBF8FF' }]}>
+                <FontAwesomeIcon icon={faUsers} size={20} color="#3182CE" />
               </View>
-            ))}
-          </View>
-        </View>
+              <Text style={styles.statNumber}>{data?.totalTransactions || 0}</Text>
+              <Text style={styles.statLabel}>Total Customers</Text>
+            </View>
 
-        {/* Services */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Services</Text>
-          <View style={styles.servicesContainer}>
-            <TouchableOpacity style={styles.serviceItem}>
-              <Text style={styles.serviceIcon}>💳</Text>
-              <Text style={styles.serviceTitle}>Cards</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.serviceItem}>
-              <Text style={styles.serviceIcon}>📊</Text>
-              <Text style={styles.serviceTitle}>Investments</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.serviceItem}>
-              <Text style={styles.serviceIcon}>🛡️</Text>
-              <Text style={styles.serviceTitle}>Insurance</Text>
-            </TouchableOpacity>
+            {/* Remaining Customers */}
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: '#FEF5E7' }]}>
+                <FontAwesomeIcon icon={faClockRotateLeft} size={20} color="#F6AD55" />
+              </View>
+              <Text style={styles.statNumber}>{getRemainingCustomers()}</Text>
+              <Text style={styles.statLabel}>Remaining</Text>
+            </View>
+          </View>
+
+          <View style={styles.statsRow}>
+            {/* Collected Customers */}
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: '#F0FDF4' }]}>
+                <FontAwesomeIcon icon={faCheckCircle} size={20} color="#22C55E" />
+              </View>
+              <Text style={styles.statNumber}>{getCollectedCustomers()}</Text>
+              <Text style={styles.statLabel}>Collected</Text>
+            </View>
+
+            {/* Collection Rate */}
+            <View style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: '#F3E8FF' }]}>
+                <FontAwesomeIcon icon={faChartLine} size={20} color="#8B5CF6" />
+              </View>
+              <Text style={styles.statNumber}>
+                {data?.totalTransactions ? Math.round((getCollectedCustomers() / data.totalTransactions) * 100) : 0}%
+              </Text>
+              <Text style={styles.statLabel}>Success Rate</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -151,126 +294,233 @@ const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+  container: {
+    flex: 1,
+    backgroundColor: '#6739B7',
   },
-  welcomeText: { fontSize: 14, color: '#8B8B9B' },
-  userName: { fontSize: 20, color: '#FFFFFF', fontWeight: '600', marginTop: 2 },
-  notificationButton: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: '#2a2a3e', justifyContent: 'center', alignItems: 'center',
-  },
-  notificationIcon: { fontSize: 18 },
-  balanceCard: {
-    backgroundColor: '#3B82F6',
-    margin: 20,
-    padding: 24,
-    borderRadius: 16,
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  balanceLabel: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 8,
-  },
-  balanceAmount: {
-    fontSize: 32,
-    color: '#FFFFFF',
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  accountNumber: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 20,
-  },
-  cardActions: { flexDirection: 'row' },
-  actionButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  actionButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
-  section: { marginHorizontal: 20, marginBottom: 24 },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  viewAllText: { color: '#3B82F6', fontSize: 14, fontWeight: '500' },
-  quickActionsGrid: { flexDirection: 'row', justifyContent: 'space-between' },
-  quickActionItem: { alignItems: 'center', flex: 1 },
-  quickActionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    backgroundColor: '#FFFFFF',
   },
-  quickActionEmoji: { fontSize: 24 },
-  quickActionTitle: { fontSize: 12, color: '#FFFFFF', textAlign: 'center' },
-  transactionsContainer: {
-    backgroundColor: '#2a2a3e',
-    borderRadius: 16,
-    overflow: 'hidden',
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6739B7',
+    fontWeight: '600',
+    fontFamily: 'DMSans-Regular',
   },
-  transactionItem: {
+  header: {
+    backgroundColor: '#6739B7',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 30,
+    fontFamily: 'DMSans-Regular',
+  },
+  bankInfoSection: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3f3f5f',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    fontFamily: 'DMSans-Regular',
   },
-  transactionLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  transactionIcon: {
+  bankInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    fontFamily: 'DMSans-Regular',
+  },
+  bankLogoContainer: {
+    marginRight: 12,
+  },
+  bankLogo: {
+    width: 48,
+    height: 48,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backdropFilter: 'blur(10px)',
+  },
+  bankDetails: {
+    flex: 1,
+    fontFamily: 'DMSans-Regular',
+  },
+  bankName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 2,
+    fontFamily: 'DMSans-Regular',
+  },
+  bankCode: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontFamily: 'DMSans-Regular',
+  },
+  notificationButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  agentInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    fontFamily: 'DMSans-Regular',
+  },
+  agentAvatar: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  transactionIconText: { color: '#FFFFFF', fontSize: 18, fontWeight: '600' },
-  transactionDetails: { flex: 1 },
-  transactionDescription: {
+  agentName: {
     fontSize: 14,
+    fontWeight: '600',
     color: '#FFFFFF',
-    fontWeight: '500',
     marginBottom: 2,
+    fontFamily: 'DMSans-Regular',
   },
-  transactionDate: { fontSize: 12, color: '#8B8B9B' },
-  transactionAmount: { fontSize: 14, fontWeight: '600' },
-  servicesContainer: { flexDirection: 'row', justifyContent: 'space-between' },
-  serviceItem: {
-    alignItems: 'center',
-    backgroundColor: '#2a2a3e',
-    padding: 20,
-    borderRadius: 12,
+  agentNumber: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontFamily: 'DMSans-Regular',
+  },
+  scrollView: {
     flex: 1,
-    marginHorizontal: 4,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginTop: -20,
   },
-  serviceIcon: { fontSize: 24, marginBottom: 8 },
-  serviceTitle: { fontSize: 12, color: '#FFFFFF', textAlign: 'center' },
+  collectionCard: {
+    margin: 20,
+    marginTop: 30,
+    padding: 24,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    shadowColor: '#6739B7',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  collectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  collectionHeaderText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginLeft: 8,
+    fontFamily: 'DMSans-Regular',
+  },
+  collectionAmount: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#6739B7',
+    marginBottom: 8,
+    fontFamily: 'DMSans-Regular',
+  },
+  collectionSubtext: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 24,
+    fontFamily: 'DMSans-Regular',
+  },
+  collectionActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6739B7',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  secondaryButton: {
+    backgroundColor: 'rgba(103, 57, 183, 0.1)',
+    borderWidth: 1,
+    borderColor: '#6739B7',
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'DMSans-Regular',
+  },
+  secondaryButtonText: {
+    color: '#6739B7',
+    fontFamily: 'DMSans-Regular',
+  },
+  statsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginHorizontal: 6,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  statIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
+    fontFamily: 'DMSans-Regular',
+  },
 });
 
 export default HomeScreen;

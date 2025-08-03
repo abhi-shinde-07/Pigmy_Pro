@@ -4,8 +4,3 @@ export default function Index() {
       <App/>
   )
 }
-
-Index.options = {
-  headerShown: false,
-};
-

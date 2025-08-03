@@ -1,5 +1,4 @@
-import { useState } from 'react';
-
+import React, { useState } from 'react';
 import {
   Dimensions,
   SafeAreaView,
@@ -7,157 +6,39 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
 const AlertScreen = () => {
   const [activeTab, setActiveTab] = useState('all');
-  
-  const notifications = [
-    {
-      id: 1,
-      type: 'transaction',
-      title: 'Payment Received',
-      message: 'You received ₹45,000 salary credit',
-      time: '2 hours ago',
-      icon: '💰',
-      color: '#10B981',
-      unread: true,
-    },
-    {
-      id: 2,
-      type: 'security',
-      title: 'Login Alert',
-      message: 'New device login detected from Delhi',
-      time: '1 day ago',
-      icon: '🔐',
-      color: '#F59E0B',
-      unread: true,
-    },
-    {
-      id: 3,
-      type: 'bill',
-      title: 'Bill Reminder',
-      message: 'Electricity bill due in 3 days',
-      time: '2 days ago',
-      icon: '⚡',
-      color: '#EF4444',
-      unread: false,
-    },
-    {
-      id: 4,
-      type: 'promotion',
-      title: 'New Feature',
-      message: 'Try our new investment plans with 12% returns',
-      time: '3 days ago',
-      icon: '🎉',
-      color: '#3B82F6',
-      unread: false,
-    },
-    {
-      id: 5,
-      type: 'transaction',
-      title: 'Payment Sent',
-      message: 'You paid ₹2,340 for electricity bill',
-      time: '4 days ago',
-      icon: '📤',
-      color: '#8B5CF6',
-      unread: false,
-    },
-  ];
 
   const tabs = [
-    { id: 'all', title: 'All', count: 5 },
-    { id: 'unread', title: 'Unread', count: 2 },
-    { id: 'transaction', title: 'Transactions', count: 2 },
+    { id: 'all', title: 'All', count: 0 },
+    { id: 'unread', title: 'Unread', count: 0 },
+    { id: 'transaction', title: 'Transactions', count: 0 },
   ];
-
-  const filteredNotifications = notifications.filter(notif => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'unread') return notif.unread;
-    return notif.type === activeTab;
-  });
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
+     <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <TouchableOpacity style={styles.markAllButton}>
-          <Text style={styles.markAllText}>Mark All</Text>
-        </TouchableOpacity>
+      <View style={styles.header}>       
+        <Text style={styles.headerTitle}>Notifications</Text>   
       </View>
-
-      {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.tabs}>
-            {tabs.map((tab) => (
-              <TouchableOpacity
-                key={tab.id}
-                style={[
-                  styles.tab,
-                  activeTab === tab.id && styles.activeTab
-                ]}
-                onPress={() => setActiveTab(tab.id)}
-              >
-                <Text style={[
-                  styles.tabText,
-                  activeTab === tab.id && styles.activeTabText
-                ]}>
-                  {tab.title}
-                </Text>
-                {tab.count > 0 && (
-                  <View style={styles.tabBadge}>
-                    <Text style={styles.tabBadgeText}>{tab.count}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
-
-      {/* Notifications List */}
+      {/* Under Construction Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.notificationsList}>
-          {filteredNotifications.map((notification) => (
-            <TouchableOpacity key={notification.id} style={styles.notificationItem}>
-              <View style={styles.notificationLeft}>
-                <View style={[styles.notificationIcon, { backgroundColor: notification.color }]}>
-                  <Text style={styles.notificationIconText}>{notification.icon}</Text>
-                </View>
-                <View style={styles.notificationContent}>
-                  <View style={styles.notificationHeader}>
-                    <Text style={styles.notificationTitle}>{notification.title}</Text>
-                    {notification.unread && <View style={styles.unreadDot} />}
-                  </View>
-                  <Text style={styles.notificationMessage}>{notification.message}</Text>
-                  <Text style={styles.notificationTime}>{notification.time}</Text>
-                </View>
-              </View>
-              <TouchableOpacity style={styles.optionsButton}>
-                <Text style={styles.optionsIcon}>⋯</Text>
-              </TouchableOpacity>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {filteredNotifications.length === 0 && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🔔</Text>
-            <Text style={styles.emptyTitle}>No notifications</Text>
-            <Text style={styles.emptyMessage}>You're all caught up!</Text>
+        <View style={styles.constructionContainer}>
+          <View style={styles.constructionIcon}>
+            <Text style={styles.constructionEmoji}>🚧</Text>
           </View>
-        )}
+          
+          <Text style={styles.constructionTitle}>Under Construction</Text>
+          <Text style={styles.constructionSubtitle}>We're working hard to bring you something amazing!</Text>
+          
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -166,17 +47,16 @@ const AlertScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#F8FAFC',
   },
   header: {
-    marginTop: 50,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+   backgroundColor: '#6739B7',
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2a3e',
+    paddingTop: 60,
+    paddingBottom: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   backButton: {
     padding: 4,
@@ -189,19 +69,22 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#FFFFFF',
     fontWeight: '600',
+    fontFamily: 'DMSans-Regular',
   },
   markAllButton: {
     padding: 4,
+    opacity: 0.6,
   },
   markAllText: {
     fontSize: 14,
-    color: '#3B82F6',
+    color: '#E0E7FF',
     fontWeight: '500',
   },
   tabsContainer: {
     paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a3e',
+    borderBottomColor: '#E5E7EB',
   },
   tabs: {
     flexDirection: 'row',
@@ -214,120 +97,145 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#2a2a3e',
+    backgroundColor: '#F3F4F6',
   },
   activeTab: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#8B5CF6',
   },
   tabText: {
     fontSize: 14,
-    color: '#8B8B9B',
+    color: '#6B7280',
     fontWeight: '500',
   },
   activeTabText: {
     color: '#FFFFFF',
   },
-  tabBadge: {
-    backgroundColor: '#EF4444',
-    borderRadius: 8,
-    width: 16,
-    height: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 6,
-  },
-  tabBadgeText: {
-    fontSize: 10,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
   content: {
     flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  constructionContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
     paddingHorizontal: 20,
   },
-  notificationsList: {
-    paddingTop: 16,
+  constructionIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    shadowColor: '#8B5CF6',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  notificationItem: {
+  constructionEmoji: {
+    fontSize: 48,
+  },
+  constructionTitle: {
+    fontSize: 28,
+    color: '#6B46C1',
+    fontWeight: '700',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  constructionSubtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 22,
+  },
+  featuresContainer: {
+    width: '100%',
+    marginBottom: 32,
+  },
+  featureItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    backgroundColor: '#2a2a3e',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
+    shadowColor: '#8B5CF6',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  notificationLeft: {
-    flexDirection: 'row',
-    flex: 1,
+  featureIcon: {
+    fontSize: 24,
+    marginRight: 16,
   },
-  notificationIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  notificationIconText: {
-    fontSize: 18,
-  },
-  notificationContent: {
-    flex: 1,
-  },
-  notificationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  notificationTitle: {
+  featureText: {
     fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    flex: 1,
+    color: '#374151',
+    fontWeight: '500',
   },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#3B82F6',
-    marginLeft: 8,
+  progressContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 32,
   },
-  notificationMessage: {
+  progressText: {
     fontSize: 14,
-    color: '#8B8B9B',
-    marginBottom: 6,
-    lineHeight: 18,
-  },
-  notificationTime: {
-    fontSize: 12,
     color: '#6B7280',
+    marginBottom: 8,
+    fontWeight: '500',
   },
-  optionsButton: {
-    padding: 4,
-  },
-  optionsIcon: {
-    fontSize: 16,
-    color: '#8B8B9B',
-    transform: [{ rotate: '90deg' }],
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    fontWeight: '600',
+  progressBar: {
+    width: '80%',
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
     marginBottom: 8,
   },
-  emptyMessage: {
+  progressFill: {
+    width: '75%',
+    height: '100%',
+    backgroundColor: '#8B5CF6',
+    borderRadius: 4,
+  },
+  progressPercentage: {
+    fontSize: 16,
+    color: '#6B46C1',
+    fontWeight: '600',
+  },
+  notifyButton: {
+    backgroundColor: '#6B46C1',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 25,
+    marginBottom: 16,
+    shadowColor: '#6B46C1',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  notifyButtonText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  estimatedTime: {
     fontSize: 14,
-    color: '#8B8B9B',
+    color: '#8B5CF6',
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });
 

@@ -1,9 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-
+import {
+  faCheck,
+  faEye,
+  faEyeSlash,
+  faMapMarkerAlt,
+  faPhone,
+  faPlus,
+  faRupeeSign,
+  faSearch,
+  faTimes,
+  faUser,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
   Dimensions,
+  Modal,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -18,92 +31,93 @@ const { width } = Dimensions.get('window');
 
 const SearchScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('all');
-  const [recentSearches, setRecentSearches] = useState([
-    'Transfer to John',
-    'Bill Payment',
-    'Account Balance',
-  ]);
   const [isSearching, setIsSearching] = useState(false);
-  const [searchHistory, setSearchHistory] = useState([]);
-  
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const searchInputRef = useRef(null);
-
-  const filters = [
-    { id: 'all', title: 'All', icon: '🔍', count: 5 },
-    { id: 'transactions', title: 'Transactions', icon: '💸', count: 2 },
-    { id: 'contacts', title: 'Contacts', icon: '👥', count: 2 },
-    { id: 'services', title: 'Services', icon: '⚙️', count: 1 },
-  ];
-
-  const searchResults = [
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [collectionAmount, setCollectionAmount] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [customers, setCustomers] = useState([
     {
       id: 1,
-      type: 'transaction',
-      title: 'Transfer to Sarah Wilson',
-      subtitle: 'July 28, 2025 • ₹1,500',
-      icon: '💸',
-      category: 'Transfer',
-      amount: '₹1,500',
-      status: 'completed',
-      time: '2 hours ago',
+      name: 'Rajesh Kumar',
+      phone: '+91 98765 43210',
+      address: 'Shivaji Nagar, Pune',
+      accountNumber: 'PUCB001234567',
+      totalCollection: 15000,
+      lastCollection: '2025-07-25',
+      status: 'active',
+      collections: [
+        { date: '2025-07-25', amount: 2500 },
+        { date: '2025-07-20', amount: 3000 },
+        { date: '2025-07-15', amount: 2000 },
+      ]
     },
     {
       id: 2,
-      type: 'contact',
-      title: 'John Smith',
-      subtitle: 'john.smith@email.com',
-      icon: '👤',
-      phone: '+91 98765 43210',
-      lastTransaction: '₹500 • 3 days ago',
+      name: 'Priya Sharma',
+      phone: '+91 87654 32109',
+      address: 'FC Road, Pune',
+      accountNumber: 'PUCB001234568',
+      totalCollection: 25000,
+      lastCollection: '2025-07-28',
+      status: 'active',
+      collections: [
+        { date: '2025-07-28', amount: 5000 },
+        { date: '2025-07-22', amount: 4000 },
+        { date: '2025-07-18', amount: 3500 },
+      ]
     },
     {
       id: 3,
-      type: 'service',
-      title: 'Bill Payment',
-      subtitle: 'Pay utility bills quickly',
-      icon: '📄',
-      description: 'Electricity, Water, Gas payments',
+      name: 'Amit Patil',
+      phone: '+91 76543 21098',
+      address: 'Kothrud, Pune',
+      accountNumber: 'PUCB001234569',
+      totalCollection: 8000,
+      lastCollection: '2025-07-20',
+      status: 'active',
+      collections: [
+        { date: '2025-07-20', amount: 2000 },
+        { date: '2025-07-12', amount: 3000 },
+      ]
     },
     {
       id: 4,
-      type: 'transaction',
-      title: 'ATM Withdrawal',
-      subtitle: 'July 27, 2025 • ₹2,000',
-      icon: '🏧',
-      category: 'Withdrawal',
-      amount: '₹2,000',
-      status: 'completed',
-      time: '1 day ago',
-      location: 'HDFC ATM, MG Road',
+      name: 'Sunita Desai',
+      phone: '+91 65432 10987',
+      address: 'Baner, Pune',
+      accountNumber: 'PUCB001234570',
+      totalCollection: 32000,
+      lastCollection: '2025-07-30',
+      status: 'active',
+      collections: [
+        { date: '2025-07-30', amount: 6000 },
+        { date: '2025-07-25', amount: 5500 },
+        { date: '2025-07-20', amount: 4000 },
+      ]
     },
     {
       id: 5,
-      type: 'contact',
-      title: 'Maria Garcia',
-      subtitle: 'maria.garcia@email.com',
-      icon: '👤',
-      phone: '+91 87654 32109',
-      lastTransaction: '₹1,200 • 1 week ago',
-    },
-  ];
+      name: 'Vikram Singh',
+      phone: '+91 54321 09876',
+      address: 'Aundh, Pune',
+      accountNumber: 'PUCB001234571',
+      totalCollection: 12000,
+      lastCollection: '2025-07-18',
+      status: 'inactive',
+      collections: [
+        { date: '2025-07-18', amount: 2500 },
+        { date: '2025-07-10', amount: 3000 },
+      ]
+    }
+  ]);
 
-  const quickSearches = [
-    { text: 'Recent Transactions', icon: '🕒', popular: true },
-    { text: 'Account Balance', icon: '💰', popular: true },
-    { text: 'Transfer Money', icon: '💸', popular: false },
-    { text: 'Bill Payments', icon: '📄', popular: true },
-    { text: 'Loan Status', icon: '🏦', popular: false },
-    { text: 'Card Details', icon: '💳', popular: false },
-  ];
-
-  const trendingSearches = [
-    'UPI payments',
-    'Credit card statement',
-    'Mutual funds',
-    'Fixed deposits',
-  ];
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const modalAnimation = useRef(new Animated.Value(0)).current;
+  const overlayAnimation = useRef(new Animated.Value(0)).current;
 
   // Simulate search delay
   useEffect(() => {
@@ -127,113 +141,317 @@ const SearchScreen = () => {
     }).start();
   }, [searchQuery, fadeAnim]);
 
-  const filteredResults = useMemo(() => {
-    return searchResults.filter(result => {
+  const filteredCustomers = useMemo(() => {
+    return customers.filter(customer => {
       const matchesQuery = searchQuery === '' || 
-        result.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        result.subtitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (result.category && result.category.toLowerCase().includes(searchQuery.toLowerCase()));
+        customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        customer.phone.includes(searchQuery) ||
+        customer.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        customer.accountNumber.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const matchesFilter = selectedFilter === 'all' || 
-        (selectedFilter === 'transactions' && result.type === 'transaction') ||
-        (selectedFilter === 'contacts' && result.type === 'contact') ||
-        (selectedFilter === 'services' && result.type === 'service');
-      
-      return matchesQuery && matchesFilter;
+      return matchesQuery;
     });
-  }, [searchQuery, selectedFilter]);
+  }, [searchQuery, customers]);
 
-  const handleQuickSearch = (query) => {
-    setSearchQuery(query);
-    addToSearchHistory(query);
-  };
-
-  const handleSearch = (query) => {
-    if (query.trim() && !searchHistory.includes(query.trim())) {
-      addToSearchHistory(query.trim());
-    }
-  };
-
-  const addToSearchHistory = (query) => {
-    setSearchHistory(prev => [query, ...prev.filter(item => item !== query)].slice(0, 5));
-  };
-
-  const removeRecentSearch = (index) => {
-    setRecentSearches(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const clearAllRecentSearches = () => {
-    setRecentSearches([]);
-  };
-
-  const getFilterCount = (filterId) => {
-    if (filterId === 'all') return filteredResults.length;
-    return filteredResults.filter(result => 
-      (filterId === 'transactions' && result.type === 'transaction') ||
-      (filterId === 'contacts' && result.type === 'contact') ||
-      (filterId === 'services' && result.type === 'service')
-    ).length;
-  };
-
-  const getIconColor = (type) => {
-    switch (type) {
-      case 'transaction': return '#10B981';
-      case 'contact': return '#3B82F6';
-      case 'service': return '#8B5CF6';
-      default: return '#6B7280';
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed': return '#10B98130';
-      case 'pending': return '#F59E0B30';
-      case 'failed': return '#EF444430';
-      default: return '#6B728030';
-    }
-  };
-
-  const renderResultItem = (result) => {
-    const isTransaction = result.type === 'transaction';
-    const isContact = result.type === 'contact';
+  const showCollectionModal = (customer) => {
+    setSelectedCustomer(customer);
+    setShowPasswordModal(true);
+    setPassword('');
+    setCollectionAmount('');
+    setPasswordError('');
     
+    Animated.parallel([
+      Animated.timing(overlayAnimation, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.spring(modalAnimation, {
+        toValue: 1,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const hideCollectionModal = () => {
+    Animated.parallel([
+      Animated.timing(overlayAnimation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.spring(modalAnimation, {
+        toValue: 0,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowPasswordModal(false);
+      setSelectedCustomer(null);
+      setPassword('');
+      setCollectionAmount('');
+      setPasswordError('');
+    });
+  };
+
+  const handleAddCollection = () => {
+    if (password !== '1234') {
+      setPasswordError('Invalid password');
+      return;
+    }
+
+    if (!collectionAmount || parseFloat(collectionAmount) <= 0) {
+      setPasswordError('Please enter a valid amount');
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      const updatedCustomers = customers.map(customer => {
+        if (customer.id === selectedCustomer.id) {
+          const newCollection = {
+            date: new Date().toISOString().split('T')[0],
+            amount: parseFloat(collectionAmount)
+          };
+          
+          return {
+            ...customer,
+            totalCollection: customer.totalCollection + parseFloat(collectionAmount),
+            lastCollection: newCollection.date,
+            collections: [newCollection, ...customer.collections]
+          };
+        }
+        return customer;
+      });
+      
+      setCustomers(updatedCustomers);
+      setIsProcessing(false);
+      hideCollectionModal();
+    }, 1500);
+  };
+
+  const formatCurrency = (amount) => {
+    return `₹${amount.toLocaleString('en-IN')}`;
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const renderCustomerItem = (customer) => {
     return (
-      <TouchableOpacity key={result.id} style={styles.resultItem}>
-        <View style={[styles.resultIcon, { backgroundColor: getIconColor(result.type) }]}>
-          <Text style={styles.resultIconText}>{result.icon}</Text>
-        </View>
-        <View style={styles.resultContent}>
-          <View style={styles.resultHeader}>
-            <Text style={styles.resultTitle}>{result.title}</Text>
-            {isTransaction && (
-              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(result.status) }]}>
-                <Text style={styles.statusText}>{result.status}</Text>
-              </View>
-            )}
+      <View key={customer.id} style={styles.customerCard}>
+        <View style={styles.customerHeader}>
+          <View style={styles.customerAvatar}>
+            <FontAwesomeIcon icon={faUser} size={20} color="#FFFFFF" />
           </View>
-          <Text style={styles.resultSubtitle}>{result.subtitle}</Text>
-          {isTransaction && result.location && (
-            <Text style={styles.resultLocation}>📍 {result.location}</Text>
-          )}
-          {isContact && result.lastTransaction && (
-            <Text style={styles.lastTransaction}>Last: {result.lastTransaction}</Text>
-          )}
+          <View style={styles.customerInfo}>
+            <Text style={styles.customerName}>{customer.name}</Text>
+            <Text style={styles.customerAccount}>{customer.accountNumber}</Text>
+            <View style={[
+              styles.statusBadge, 
+              { backgroundColor: customer.status === 'active' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)' }
+            ]}>
+              <View style={[
+                styles.statusDot,
+                { backgroundColor: customer.status === 'active' ? '#22C55E' : '#EF4444' }
+              ]} />
+              <Text style={[
+                styles.statusText,
+                { color: customer.status === 'active' ? '#22C55E' : '#EF4444' }
+              ]}>
+                {customer.status.toUpperCase()}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity 
+            style={styles.collectButton}
+            onPress={() => showCollectionModal(customer)}
+          >
+            <FontAwesomeIcon icon={faPlus} size={14} color="#FFFFFF" />
+            <Text style={styles.collectButtonText}>Collect</Text>
+          </TouchableOpacity>
         </View>
-        <Text style={styles.resultChevron}>›</Text>
-      </TouchableOpacity>
+
+        <View style={styles.customerDetails}>
+          <View style={styles.detailRow}>
+            <FontAwesomeIcon icon={faPhone} size={12} color="#6B7280" />
+            <Text style={styles.detailText}>{customer.phone}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <FontAwesomeIcon icon={faMapMarkerAlt} size={12} color="#6B7280" />
+            <Text style={styles.detailText}>{customer.address}</Text>
+          </View>
+        </View>
+
+        <View style={styles.customerStats}>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Total Collection</Text>
+            <Text style={styles.statValue}>{formatCurrency(customer.totalCollection)}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Last Collection</Text>
+            <Text style={styles.statValue}>{formatDate(customer.lastCollection)}</Text>
+          </View>
+        </View>
+      </View>
     );
   };
 
+  const CollectionModal = () => (
+    <Modal
+      visible={showPasswordModal}
+      transparent
+      animationType="none"
+      onRequestClose={hideCollectionModal}
+    >
+      <Animated.View
+        style={[
+          styles.modalOverlay,
+          { opacity: overlayAnimation }
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.overlayTouchable}
+          activeOpacity={1}
+          onPress={hideCollectionModal}
+        />
+        <Animated.View
+          style={[
+            styles.modalContainer,
+            {
+              transform: [
+                {
+                  scale: modalAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.8, 1],
+                  }),
+                },
+                {
+                  translateY: modalAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [50, 0],
+                  }),
+                },
+              ],
+              opacity: modalAnimation,
+            },
+          ]}
+        >
+          <View style={styles.modal}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={hideCollectionModal}
+              >
+                <FontAwesomeIcon icon={faTimes} size={18} color="#6B7280" />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Add Collection</Text>
+              {selectedCustomer && (
+                <Text style={styles.modalSubtitle}>{selectedCustomer.name}</Text>
+              )}
+            </View>
+
+            {/* Modal Content */}
+            <View style={styles.modalContent}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Collection Amount</Text>
+                <View style={styles.amountInputContainer}>
+                  <FontAwesomeIcon icon={faRupeeSign} size={16} color="#6B7280" />
+                  <TextInput
+                    style={styles.amountInput}
+                    placeholder="Enter amount"
+                    placeholderTextColor="#9CA3AF"
+                    value={collectionAmount}
+                    onChangeText={setCollectionAmount}
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Password</Text>
+                <View style={styles.passwordInputContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder="Enter password"
+                    placeholderTextColor="#9CA3AF"
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      setPasswordError('');
+                    }}
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <FontAwesomeIcon 
+                      icon={showPassword ? faEyeSlash : faEye} 
+                      size={16} 
+                      color="#6B7280" 
+                    />
+                  </TouchableOpacity>
+                </View>
+                {passwordError ? (
+                  <Text style={styles.errorText}>{passwordError}</Text>
+                ) : null}
+              </View>
+            </View>
+
+            {/* Modal Actions */}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={hideCollectionModal}
+                disabled={isProcessing}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={handleAddCollection}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <FontAwesomeIcon icon={faCheck} size={14} color="#FFFFFF" />
+                    <Text style={styles.confirmButtonText}>Add Collection</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Animated.View>
+      </Animated.View>
+    </Modal>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
+      <StatusBar barStyle="light-content" backgroundColor="#6739B7" />
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Search</Text>
+        <Text style={styles.headerTitle}>Search Customers</Text>
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Text style={styles.cancelButton}>Cancel</Text>
+            <Text style={styles.cancelButton}>Clear</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -241,183 +459,60 @@ const SearchScreen = () => {
       {/* Search Input */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <FontAwesomeIcon icon={faSearch} size={16} color="#6B7280" />
           <TextInput
-            ref={searchInputRef}
             style={styles.searchInput}
-            placeholder="Search transactions, contacts, services..."
-            placeholderTextColor="#6B7280"
+            placeholder="Search by name, phone, account..."
+            placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={setSearchQuery}
-            onSubmitEditing={() => handleSearch(searchQuery)}
             autoCorrect={false}
             returnKeyType="search"
           />
           {isSearching ? (
-            <ActivityIndicator size="small" color="#3B82F6" />
+            <ActivityIndicator size="small" color="#6739B7" />
           ) : searchQuery.length > 0 ? (
             <TouchableOpacity 
               style={styles.clearButton}
               onPress={() => setSearchQuery('')}
             >
-              <Text style={styles.clearButtonText}>✕</Text>
+              <FontAwesomeIcon icon={faTimes} size={14} color="#6B7280" />
             </TouchableOpacity>
           ) : null}
         </View>
       </View>
 
-      {/* Filters */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.filtersContainer}
-        contentContainerStyle={styles.filtersContent}
-      >
-        {filters.map((filter) => {
-          const count = searchQuery.length > 0 ? getFilterCount(filter.id) : filter.count;
-          return (
-            <TouchableOpacity
-              key={filter.id}
-              style={[
-                styles.filterButton,
-                selectedFilter === filter.id && styles.filterButtonActive
-              ]}
-              onPress={() => setSelectedFilter(filter.id)}
-            >
-              <Text style={styles.filterIcon}>{filter.icon}</Text>
-              <Text style={[
-                styles.filterText,
-                selectedFilter === filter.id && styles.filterTextActive
-              ]}>
-                {filter.title}
-              </Text>
-              {count > 0 && (
-                <View style={[
-                  styles.countBadge,
-                  selectedFilter === filter.id && styles.countBadgeActive
-                ]}>
-                  <Text style={[
-                    styles.countText,
-                    selectedFilter === filter.id && styles.countTextActive
-                  ]}>
-                    {count}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {searchQuery === '' ? (
-          <>
-            {/* Quick Actions Grid */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Quick Actions</Text>
-              <View style={styles.quickActionsGrid}>
-                {quickSearches.map((search, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.quickActionCard}
-                    onPress={() => handleQuickSearch(search.text)}
-                  >
-                    <View style={styles.quickActionIconContainer}>
-                      <Text style={styles.quickActionIcon}>{search.icon}</Text>
-                    </View>
-                    <Text style={styles.quickActionText}>{search.text}</Text>
-                    {search.popular && (
-                      <View style={styles.popularDot} />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>All Customers ({customers.length})</Text>
+            <View style={styles.resultsContainer}>
+              {customers.map(renderCustomerItem)}
             </View>
-
-            {/* Trending Pills */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Trending Now</Text>
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                style={styles.trendingScrollView}
-                contentContainerStyle={styles.trendingScrollContent}
-              >
-                {trendingSearches.map((trend, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.trendingPill}
-                    onPress={() => handleQuickSearch(trend)}
-                  >
-                    <Text style={styles.trendingText}>{trend}</Text>
-                    <View style={styles.trendingIndicator}>
-                      <Text style={styles.trendingArrow}>↗</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* Recent Searches List */}
-            {recentSearches.length > 0 && (
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Recent</Text>
-                  <TouchableOpacity onPress={clearAllRecentSearches}>
-                    <Text style={styles.clearAllText}>Clear</Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.recentList}>
-                  {recentSearches.map((search, index) => (
-                    <TouchableOpacity 
-                      key={index} 
-                      style={styles.recentItem}
-                      onPress={() => handleQuickSearch(search)}
-                    >
-                      <View style={styles.recentIconContainer}>
-                        <Text style={styles.recentIcon}>🕒</Text>
-                      </View>
-                      <Text style={styles.recentText}>{search}</Text>
-                      <TouchableOpacity 
-                        style={styles.removeRecentButton}
-                        onPress={() => removeRecentSearch(index)}
-                      >
-                        <Text style={styles.removeRecentText}>×</Text>
-                      </TouchableOpacity>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
-          </>
+          </View>
         ) : (
-          // Search Results
           <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
             <Text style={styles.sectionTitle}>
-              Search Results ({filteredResults.length})
+              Search Results ({filteredCustomers.length})
             </Text>
-            {filteredResults.length > 0 ? (
+            {filteredCustomers.length > 0 ? (
               <View style={styles.resultsContainer}>
-                {filteredResults.map(renderResultItem)}
+                {filteredCustomers.map(renderCustomerItem)}
               </View>
             ) : (
               <View style={styles.noResultsContainer}>
-                <Text style={styles.noResultsIcon}>🔍</Text>
-                <Text style={styles.noResultsTitle}>No Results Found</Text>
+                <FontAwesomeIcon icon={faSearch} size={48} color="#E5E7EB" />
+                <Text style={styles.noResultsTitle}>No Customers Found</Text>
                 <Text style={styles.noResultsSubtitle}>
-                  Try adjusting your search or filters
+                  Try adjusting your search
                 </Text>
-                <TouchableOpacity 
-                  style={styles.clearFiltersButton}
-                  onPress={() => setSelectedFilter('all')}
-                >
-                  <Text style={styles.clearFiltersText}>Clear Filters</Text>
-                </TouchableOpacity>
               </View>
             )}
           </Animated.View>
         )}
       </ScrollView>
+
+      <CollectionModal />
     </SafeAreaView>
   );
 };
@@ -425,110 +520,56 @@ const SearchScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#F8FAFC',
   },
   header: {
-    paddingTop: 50,
+    backgroundColor: '#6739B7',
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingTop: 60,
+    paddingBottom: 24,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2a3e',
   },
   headerTitle: {
     fontSize: 18,
     color: '#FFFFFF',
     fontWeight: '600',
+    fontFamily: 'DMSans-Regular',
   },
   cancelButton: {
-    fontSize: 16,
-    color: '#3B82F6',
+    fontSize: 14,
+    color: '#FFFFFF',
     fontWeight: '500',
+    opacity: 0.8,
   },
   searchContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2a2a3e',
+    backgroundColor: '#F8FAFC',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 4,
     borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 12,
+    borderColor: '#E2E8F0',
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#FFFFFF',
+    color: '#1F2937',
     paddingVertical: 12,
+    paddingLeft: 12,
+    fontFamily: 'DMSans-Regular',
   },
   clearButton: {
     padding: 4,
-  },
-  clearButtonText: {
-    color: '#6B7280',
-    fontSize: 16,
-  },
-  filtersContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  filtersContent: {
-    paddingRight: 20,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2a2a3e',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  filterButtonActive: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
-  },
-  filterIcon: {
-    fontSize: 14,
-    marginRight: 6,
-  },
-  filterText: {
-    fontSize: 14,
-    color: '#8B8B9B',
-    fontWeight: '500',
-  },
-  filterTextActive: {
-    color: '#FFFFFF',
-  },
-  countBadge: {
-    backgroundColor: '#3f3f5f',
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginLeft: 6,
-  },
-  countBadgeActive: {
-    backgroundColor: '#1E40AF',
-  },
-  countText: {
-    fontSize: 12,
-    color: '#8B8B9B',
-    fontWeight: '600',
-  },
-  countTextActive: {
-    color: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -537,269 +578,302 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 24,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
   sectionTitle: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '600',
+    fontSize: 18,
+    color: '#1F2937',
+    fontWeight: '700',
     marginBottom: 16,
-  },
-  clearAllText: {
-    fontSize: 14,
-    color: '#3B82F6',
-    fontWeight: '500',
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -8,
-  },
-  quickActionCard: {
-    width: (width - 64) / 2, // 2 cards per row with margins
-    backgroundColor: 'transparent',
-    borderRadius: 16,
-    padding: 16,
-    margin: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#2a2a3e',
-    position: 'relative',
-  },
-  quickActionIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#2a2a3e',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  quickActionIcon: {
-    fontSize: 20,
-  },
-  quickActionText: {
-    fontSize: 13,
-    color: '#FFFFFF',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  popularDot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#F59E0B',
-  },
-  
-  trendingScrollView: {
-    marginHorizontal: -20,
-  },
-  trendingScrollContent: {
-    paddingHorizontal: 20,
-    paddingRight: 40,
-  },
-  trendingPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2a2a3e',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#3f3f5f',
-  },
-  trendingText: {
-    fontSize: 13,
-    color: '#FFFFFF',
-    fontWeight: '500',
-    marginRight: 6,
-  },
-  trendingIndicator: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  trendingArrow: {
-    fontSize: 10,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-  
-  recentList: {
-    gap: 4,
-  },
-  recentItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-  },
-  recentIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#2a2a3e',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  recentIcon: {
-    fontSize: 14,
-  },
-  recentText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '400',
-  },
-  removeRecentButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#3f3f5f',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  removeRecentText: {
-    color: '#8B8B9B',
-    fontSize: 16,
-    fontWeight: '300',
+    fontFamily: 'DMSans-Regular',
   },
   resultsContainer: {
-    backgroundColor: '#2a2a3e',
+    gap: 12,
+  },
+  customerCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    overflow: 'hidden',
-  },
-  resultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3f3f5f',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  resultIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  customerHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  customerAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#6739B7',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  resultIconText: {
+  customerInfo: {
+    flex: 1,
+  },
+  customerName: {
     fontSize: 16,
-  },
-  resultContent: {
-    flex: 1,
-  },
-  resultHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    color: '#1F2937',
+    fontWeight: '700',
     marginBottom: 2,
+    fontFamily: 'DMSans-Regular',
   },
-  resultTitle: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '500',
-    flex: 1,
+  customerAccount: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 8,
+    fontFamily: 'DMSans-Regular',
   },
   statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginLeft: 8,
+    alignSelf: 'flex-start',
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 4,
   },
   statusText: {
     fontSize: 10,
-    color: '#10B981',
     fontWeight: '600',
-    textTransform: 'capitalize',
+    fontFamily: 'DMSans-Regular',
   },
-  resultSubtitle: {
+  collectButton: {
+    backgroundColor: '#6739B7',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 4,
+  },
+  collectButtonText: {
+    color: '#FFFFFF',
     fontSize: 12,
-    color: '#8B8B9B',
-    marginBottom: 2,
+    fontWeight: '600',
+    fontFamily: 'DMSans-Regular',
   },
-  resultLocation: {
+  customerDetails: {
+    marginBottom: 12,
+    gap: 6,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  detailText: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontFamily: 'DMSans-Regular',
+  },
+  customerStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statLabel: {
     fontSize: 11,
     color: '#6B7280',
+    marginBottom: 4,
+    fontFamily: 'DMSans-Regular',
   },
-  lastTransaction: {
-    fontSize: 11,
-    color: '#6B7280',
-  },
-  resultChevron: {
-    fontSize: 16,
-    color: '#6B7280',
+  statValue: {
+    fontSize: 14,
+    color: '#1F2937',
+    fontWeight: '700',
+    fontFamily: 'DMSans-Regular',
   },
   noResultsContainer: {
     alignItems: 'center',
     paddingVertical: 40,
   },
-  noResultsIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
   noResultsTitle: {
     fontSize: 18,
-    color: '#FFFFFF',
+    color: '#1F2937',
     fontWeight: '600',
+    marginTop: 16,
     marginBottom: 8,
+    fontFamily: 'DMSans-Regular',
   },
   noResultsSubtitle: {
     fontSize: 14,
-    color: '#8B8B9B',
+    color: '#6B7280',
     textAlign: 'center',
-    marginBottom: 16,
+    fontFamily: 'DMSans-Regular',
   },
-  clearFiltersButton: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
-  clearFiltersText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
+  overlayTouchable: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
   },
-    recentSearchContainer: {
-    backgroundColor: '#2a2a3e',
-    borderRadius: 16,
+  modalContainer: {
+    width: '100%',
+    maxWidth: 400,
+  },
+  modal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 16,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 16,
     overflow: 'hidden',
   },
-  recentSearchItem: {
+  modalHeader: {
+    alignItems: 'center',
+    padding: 24,
+    position: 'relative',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+    fontFamily: 'DMSans-Regular',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontFamily: 'DMSans-Regular',
+  },
+  modalContent: {
+    padding: 24,
+    gap: 20,
+  },
+  inputGroup: {
+    gap: 8,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#1F2937',
+    fontWeight: '600',
+    fontFamily: 'DMSans-Regular',
+  },
+  amountInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3f3f5f',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  recentSearchIcon: {
-    fontSize: 16,
-    marginRight: 12,
-  },
-  recentSearchText: {
+  amountInput: {
     flex: 1,
+    fontSize: 16,
+    color: '#1F2937',
+    paddingVertical: 12,
+    paddingLeft: 12,
+    fontFamily: 'DMSans-Regular',
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  passwordInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1F2937',
+    paddingVertical: 12,
+    fontFamily: 'DMSans-Regular',
+  },
+  eyeButton: {
+    padding: 8,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
+    fontFamily: 'DMSans-Regular',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  cancelButton: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  cancelButtonText: {
     fontSize: 14,
+    fontWeight: '600',
+    color: '#64748B',
+    fontFamily: 'DMSans-Regular',
+  },
+  confirmButton: {
+    backgroundColor: '#6739B7',
+  },
+  confirmButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#FFFFFF',
-  },
-  removeButton: {
-    padding: 4,
-  },
-  removeButtonText: {
-    color: '#6B7280',
-    fontSize: 14,
+    fontFamily: 'DMSans-Regular',
   },
 });
 
