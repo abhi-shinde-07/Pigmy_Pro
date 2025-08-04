@@ -10,7 +10,7 @@ import {
   faUser
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import React, { useContext, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -74,27 +74,54 @@ const ProfileScreen = () => {
 
   const { user, logout } = authContext;
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [dialogAnimation] = useState(new Animated.Value(0));
-  const [overlayAnimation] = useState(new Animated.Value(0));
+  const [isAnimatingIn, setIsAnimatingIn] = useState(false);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+  
+  // Use useRef to avoid re-creating Animated.Value on every render
+  const dialogAnimation = useRef(new Animated.Value(0)).current;
+  const overlayAnimation = useRef(new Animated.Value(0)).current;
 
-  const showDialog = () => {
+  // Reset animation values when dialog is closed
+  useEffect(() => {
+    if (!showLogoutDialog) {
+      dialogAnimation.setValue(0);
+      overlayAnimation.setValue(0);
+      setIsAnimatingIn(false);
+      setIsAnimatingOut(false);
+    }
+  }, [showLogoutDialog, dialogAnimation, overlayAnimation]);
+
+  const showDialog = useCallback(() => {
+    if (isAnimatingIn || isAnimatingOut) return; // Prevent multiple animations
+    
     setShowLogoutDialog(true);
-    Animated.parallel([
-      Animated.timing(overlayAnimation, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.spring(dialogAnimation, {
-        toValue: 1,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
+    setIsAnimatingIn(true);
+    
+    // Use setTimeout instead of requestAnimationFrame for better compatibility
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(overlayAnimation, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(dialogAnimation, {
+          toValue: 1,
+          tension: 100,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setIsAnimatingIn(false);
+      });
+    }, 10);
+  }, [overlayAnimation, dialogAnimation, isAnimatingIn, isAnimatingOut]);
 
-  const hideDialog = () => {
+  const hideDialog = useCallback(() => {
+    if (isAnimatingIn || isAnimatingOut) return; // Prevent multiple animations
+    
+    setIsAnimatingOut(true);
+    
     Animated.parallel([
       Animated.timing(overlayAnimation, {
         toValue: 0,
@@ -109,101 +136,117 @@ const ProfileScreen = () => {
       }),
     ]).start(() => {
       setShowLogoutDialog(false);
+      setIsAnimatingOut(false);
     });
-  };
+  }, [overlayAnimation, dialogAnimation, isAnimatingIn, isAnimatingOut]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
+    if (isAnimatingOut) return; // Prevent multiple logout calls
+    
     hideDialog();
+    // Use setTimeout to ensure dialog closes before logout
     setTimeout(() => {
       logout();
     }, 300);
-  };
+  }, [hideDialog, logout, isAnimatingOut]);
 
-  const formatCurrency = (amount) => {
+  const formatCurrency = useCallback((amount) => {
     return `₹${amount.toLocaleString('en-IN')}`;
-  };
+  }, []);
 
-  const LogoutDialog = () => (
-    <Modal
-      visible={showLogoutDialog}
-      transparent
-      animationType="none"
-      onRequestClose={hideDialog}
-    >
-      <Animated.View
-        style={[
-          styles.dialogOverlay,
-          {
-            opacity: overlayAnimation,
-          },
-        ]}
+  const LogoutDialog = () => {
+    // Don't render anything if not showing
+    if (!showLogoutDialog) return null;
+    
+    return (
+      <Modal
+        visible={showLogoutDialog}
+        transparent
+        animationType="none"
+        onRequestClose={hideDialog}
+        statusBarTranslucent
       >
-        <TouchableOpacity
-          style={styles.overlayTouchable}
-          activeOpacity={1}
-          onPress={hideDialog}
-        />
         <Animated.View
           style={[
-            styles.dialogContainer,
+            styles.dialogOverlay,
             {
-              transform: [
-                {
-                  scale: dialogAnimation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.8, 1],
-                  }),
-                },
-                {
-                  translateY: dialogAnimation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [50, 0],
-                  }),
-                },
-              ],
-              opacity: dialogAnimation,
+              opacity: overlayAnimation,
             },
           ]}
         >
-          <View style={styles.dialog}>
-            {/* Dialog Header */}
-            <View style={styles.dialogHeader}>
-              <TouchableOpacity 
-                style={styles.closeButton}
-                onPress={hideDialog}
-              >
-                <FontAwesomeIcon icon={faTimes} size={18} color="#6B7280" />
-              </TouchableOpacity>
-              <View style={styles.dialogIconContainer}>
-                <FontAwesomeIcon icon={faExclamationTriangle} size={24} color="#EF4444" />
+          <TouchableOpacity
+            style={styles.overlayTouchable}
+            activeOpacity={1}
+            onPress={hideDialog}
+          />
+          <Animated.View
+            style={[
+              styles.dialogContainer,
+              {
+                transform: [
+                  {
+                    scale: dialogAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.8, 1],
+                      extrapolate: 'clamp',
+                    }),
+                  },
+                  {
+                    translateY: dialogAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [50, 0],
+                      extrapolate: 'clamp',
+                    }),
+                  },
+                ],
+                opacity: dialogAnimation,
+              },
+            ]}
+          >
+            <View style={styles.dialog}>
+              {/* Dialog Header */}
+              <View style={styles.dialogHeader}>
+                <TouchableOpacity 
+                  style={styles.closeButton}
+                  onPress={hideDialog}
+                  activeOpacity={0.7}
+                  disabled={isAnimatingOut}
+                >
+                  <FontAwesomeIcon icon={faTimes} size={18} color="#6B7280" />
+                </TouchableOpacity>
+                <View style={styles.dialogIconContainer}>
+                  <FontAwesomeIcon icon={faExclamationTriangle} size={24} color="#EF4444" />
+                </View>
+                <Text style={styles.dialogTitle}>Sign Out</Text>
+                <Text style={styles.dialogSubtitle}>Are you sure you want to sign out?</Text>
               </View>
-              <Text style={styles.dialogTitle}>Sign Out</Text>
-              <Text style={styles.dialogSubtitle}>Are you sure you want to sign out?</Text>
-            </View>
 
-            {/* Dialog Actions */}
-            <View style={styles.dialogActions}>
-              <TouchableOpacity
-                style={[styles.dialogButton, styles.cancelButton]}
-                onPress={hideDialog}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.dialogButton, styles.confirmButton]}
-                onPress={handleLogout}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.confirmButtonText}>Sign Out</Text>
-              </TouchableOpacity>
+              {/* Dialog Actions */}
+              <View style={styles.dialogActions}>
+                <TouchableOpacity
+                  style={[styles.dialogButton, styles.cancelButton]}
+                  onPress={hideDialog}
+                  activeOpacity={0.8}
+                  disabled={isAnimatingOut}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.dialogButton, styles.confirmButton]}
+                  onPress={handleLogout}
+                  activeOpacity={0.8}
+                  disabled={isAnimatingOut}
+                >
+                  <Text style={styles.confirmButtonText}>Sign Out</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </Animated.View>
         </Animated.View>
-      </Animated.View>
-    </Modal>
-  );
+      </Modal>
+    );
+  };
 
   const data = profileData.data;
 
@@ -219,6 +262,7 @@ const ProfileScreen = () => {
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Profile Card */}
         <View style={styles.profileCard}>
@@ -318,6 +362,7 @@ const ProfileScreen = () => {
             style={styles.logoutButton}
             onPress={showDialog}
             activeOpacity={0.8}
+            disabled={isAnimatingIn || isAnimatingOut}
           >
             <FontAwesomeIcon icon={faSignOutAlt} size={16} color="#EF4444" />
             <Text style={styles.logoutText}>Log Out</Text>
@@ -375,7 +420,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#FFFFFF',
     fontWeight: '600',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   profileCard: {
     margin: 20,
@@ -434,16 +479,15 @@ const styles = StyleSheet.create({
   },
   profileName: {
     fontSize: 20,
-    fontWeight: '700',
     color: '#1F2937',
     marginBottom: 4,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   profileId: {
     fontSize: 14,
     color: '#6B7280',
     marginBottom: 12,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   statusBadge: {
     flexDirection: 'row',
@@ -467,7 +511,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#22C55E',
-    fontFamily: 'DMSans-Regular',
+     fontFamily: 'DMSans-Bold',
   },
   bankSection: {
     paddingTop: 20,
@@ -484,19 +528,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
     marginLeft: 8,
-    fontFamily: 'DMSans-Regular',
+     fontFamily: 'DMSans-Medium',
   },
   bankName: {
     fontSize: 18,
-    fontWeight: '700',
     color: '#6739B7',
     marginBottom: 4,
-    fontFamily: 'DMSans-Regular',
+     fontFamily: 'DMSans-Bold',
   },
   bankCode: {
     fontSize: 14,
     color: '#6B7280',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   section: {
     marginHorizontal: 20,
@@ -504,10 +547,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
     color: '#1F2937',
     marginBottom: 16,
-    fontFamily: 'DMSans-Regular',
+     fontFamily: 'DMSans-Bold',
   },
   detailsContainer: {
     backgroundColor: '#FFFFFF',
@@ -546,13 +588,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
     marginBottom: 2,
-    fontFamily: 'DMSans-Regular',
+     fontFamily: 'DMSans-Bold',
   },
   detailValue: {
     fontSize: 14,
     fontWeight: '600',
     color: '#1F2937',
-    fontFamily: 'DMSans-Regular',
+     fontFamily: 'DMSans-Medium',
   },
   logoutContainer: {
     margin: 20,
@@ -580,9 +622,8 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#EF4444',
-    fontFamily: 'DMSans-Regular',
+   fontFamily: 'DMSans-Bold',
   },
   footer: {
     alignItems: 'center',
@@ -591,15 +632,14 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#6739B7',
     marginBottom: 4,
-    fontFamily: 'DMSans-Regular',
+     fontFamily: 'DMSans-Bold',
   },
   footerSubtext: {
     fontSize: 12,
     color: '#6B7280',
-    fontFamily: 'DMSans-Regular',
+     fontFamily: 'DMSans-Bold',
   },
 
   // Dialog Styles
@@ -659,16 +699,15 @@ const styles = StyleSheet.create({
   },
   dialogTitle: {
     fontSize: 20,
-    fontWeight: '700',
     color: '#1F2937',
     marginBottom: 8,
-    fontFamily: 'DMSans-Regular',
+     fontFamily: 'DMSans-Bold',
   },
   dialogSubtitle: {
     fontSize: 14,
     color: '#6B7280',
     textAlign: 'center',
-    fontFamily: 'DMSans-Regular',
+     fontFamily: 'DMSans-Bold',
   },
   dialogActions: {
     flexDirection: 'row',
@@ -693,7 +732,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#64748B',
-    fontFamily: 'DMSans-Regular',
+     fontFamily: 'DMSans-Bold',
   },
   confirmButton: {
     backgroundColor: '#EF4444',
@@ -702,7 +741,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
-    fontFamily: 'DMSans-Regular',
+     fontFamily: 'DMSans-Bold',
   },
 });
 

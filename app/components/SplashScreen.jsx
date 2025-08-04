@@ -404,6 +404,7 @@ const styles = StyleSheet.create({
   textContainer: {
     alignItems: 'center',
     marginBottom: 60,
+    fontFamily: 'DMSans-Bold',
   },
   brandContainer: {
     alignItems: 'center',
@@ -416,7 +417,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textAlign: 'center',
     lineHeight: 42,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   appSubtitle: {
     fontSize: 18,
@@ -424,7 +425,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: 1,
     marginTop: 4,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   taglineContainer: {
     flexDirection: 'row',
@@ -442,7 +443,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.8)',
     fontWeight: '500',
     letterSpacing: 0.5,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   loadingContainer: {
     alignItems: 'center',
@@ -473,7 +474,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.7)',
     fontWeight: '500',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   bottomBranding: {
     position: 'absolute',
@@ -507,7 +508,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     color: '#6739B7',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   brandTextContainer: {
     flexDirection: 'row',
@@ -516,23 +517,21 @@ const styles = StyleSheet.create({
   brandName: {
     fontSize: 16,
     color: '#FFFFFF',
-    fontWeight: '700',
     letterSpacing: 0.5,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   brandNameAccent: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: '700',
     letterSpacing: 0.5,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   brandTagline: {
     fontSize: 10,
     color: 'rgba(255, 255, 255, 0.5)',
     fontWeight: '400',
     marginTop: 2,
-    fontFamily: 'DMSans-Regular',
+   fontFamily: 'DMSans-Bold',
   },
 });
 

@@ -11,7 +11,7 @@ import {
   faUser,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -116,8 +116,6 @@ const SearchScreen = () => {
   ]);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const modalAnimation = useRef(new Animated.Value(0)).current;
-  const overlayAnimation = useRef(new Animated.Value(0)).current;
 
   // Simulate search delay
   useEffect(() => {
@@ -153,51 +151,25 @@ const SearchScreen = () => {
     });
   }, [searchQuery, customers]);
 
-  const showCollectionModal = (customer) => {
+  const showCollectionModal = useCallback((customer) => {
     setSelectedCustomer(customer);
     setShowPasswordModal(true);
     setPassword('');
     setCollectionAmount('');
     setPasswordError('');
-    
-    Animated.parallel([
-      Animated.timing(overlayAnimation, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.spring(modalAnimation, {
-        toValue: 1,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
+    setShowPassword(false);
+  }, []);
 
-  const hideCollectionModal = () => {
-    Animated.parallel([
-      Animated.timing(overlayAnimation, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.spring(modalAnimation, {
-        toValue: 0,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setShowPasswordModal(false);
-      setSelectedCustomer(null);
-      setPassword('');
-      setCollectionAmount('');
-      setPasswordError('');
-    });
-  };
+  const hideCollectionModal = useCallback(() => {
+    setShowPasswordModal(false);
+    setSelectedCustomer(null);
+    setPassword('');
+    setCollectionAmount('');
+    setPasswordError('');
+    setShowPassword(false);
+  }, []);
 
-  const handleAddCollection = () => {
+  const handleAddCollection = useCallback(() => {
     if (password !== '1234') {
       setPasswordError('Invalid password');
       return;
@@ -233,7 +205,7 @@ const SearchScreen = () => {
       setIsProcessing(false);
       hideCollectionModal();
     }, 1500);
-  };
+  }, [password, collectionAmount, customers, selectedCustomer, hideCollectionModal]);
 
   const formatCurrency = (amount) => {
     return `₹${amount.toLocaleString('en-IN')}`;
@@ -248,7 +220,7 @@ const SearchScreen = () => {
     });
   };
 
-  const renderCustomerItem = (customer) => {
+  const renderCustomerItem = useCallback((customer) => {
     return (
       <View key={customer.id} style={styles.customerCard}>
         <View style={styles.customerHeader}>
@@ -277,6 +249,7 @@ const SearchScreen = () => {
           <TouchableOpacity 
             style={styles.collectButton}
             onPress={() => showCollectionModal(customer)}
+            activeOpacity={0.7}
           >
             <FontAwesomeIcon icon={faPlus} size={14} color="#FFFFFF" />
             <Text style={styles.collectButtonText}>Collect</Text>
@@ -306,141 +279,7 @@ const SearchScreen = () => {
         </View>
       </View>
     );
-  };
-
-  const CollectionModal = () => (
-    <Modal
-      visible={showPasswordModal}
-      transparent
-      animationType="none"
-      onRequestClose={hideCollectionModal}
-    >
-      <Animated.View
-        style={[
-          styles.modalOverlay,
-          { opacity: overlayAnimation }
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.overlayTouchable}
-          activeOpacity={1}
-          onPress={hideCollectionModal}
-        />
-        <Animated.View
-          style={[
-            styles.modalContainer,
-            {
-              transform: [
-                {
-                  scale: modalAnimation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.8, 1],
-                  }),
-                },
-                {
-                  translateY: modalAnimation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [50, 0],
-                  }),
-                },
-              ],
-              opacity: modalAnimation,
-            },
-          ]}
-        >
-          <View style={styles.modal}>
-            {/* Modal Header */}
-            <View style={styles.modalHeader}>
-              <TouchableOpacity 
-                style={styles.closeButton}
-                onPress={hideCollectionModal}
-              >
-                <FontAwesomeIcon icon={faTimes} size={18} color="#6B7280" />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>Add Collection</Text>
-              {selectedCustomer && (
-                <Text style={styles.modalSubtitle}>{selectedCustomer.name}</Text>
-              )}
-            </View>
-
-            {/* Modal Content */}
-            <View style={styles.modalContent}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Collection Amount</Text>
-                <View style={styles.amountInputContainer}>
-                  <FontAwesomeIcon icon={faRupeeSign} size={16} color="#6B7280" />
-                  <TextInput
-                    style={styles.amountInput}
-                    placeholder="Enter amount"
-                    placeholderTextColor="#9CA3AF"
-                    value={collectionAmount}
-                    onChangeText={setCollectionAmount}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Password</Text>
-                <View style={styles.passwordInputContainer}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    placeholder="Enter password"
-                    placeholderTextColor="#9CA3AF"
-                    value={password}
-                    onChangeText={(text) => {
-                      setPassword(text);
-                      setPasswordError('');
-                    }}
-                    secureTextEntry={!showPassword}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeButton}
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    <FontAwesomeIcon 
-                      icon={showPassword ? faEyeSlash : faEye} 
-                      size={16} 
-                      color="#6B7280" 
-                    />
-                  </TouchableOpacity>
-                </View>
-                {passwordError ? (
-                  <Text style={styles.errorText}>{passwordError}</Text>
-                ) : null}
-              </View>
-            </View>
-
-            {/* Modal Actions */}
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={hideCollectionModal}
-                disabled={isProcessing}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={handleAddCollection}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <FontAwesomeIcon icon={faCheck} size={14} color="#FFFFFF" />
-                    <Text style={styles.confirmButtonText}>Add Collection</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Animated.View>
-      </Animated.View>
-    </Modal>
-  );
+  }, [showCollectionModal]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -450,8 +289,11 @@ const SearchScreen = () => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Search Customers</Text>
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Text style={styles.cancelButton}>Clear</Text>
+          <TouchableOpacity 
+            onPress={() => setSearchQuery('')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.headerCancelButton}>Clear</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -475,6 +317,7 @@ const SearchScreen = () => {
             <TouchableOpacity 
               style={styles.clearButton}
               onPress={() => setSearchQuery('')}
+              activeOpacity={0.7}
             >
               <FontAwesomeIcon icon={faTimes} size={14} color="#6B7280" />
             </TouchableOpacity>
@@ -512,7 +355,118 @@ const SearchScreen = () => {
         )}
       </ScrollView>
 
-      <CollectionModal />
+      {/* Collection Modal - Simplified without complex animations */}
+      <Modal
+        visible={showPasswordModal}
+        transparent
+        animationType="slide"
+        onRequestClose={hideCollectionModal}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.overlayTouchable}
+            activeOpacity={1}
+            onPress={hideCollectionModal}
+          />
+          <View style={styles.modalContainer}>
+            <View style={styles.modal}>
+              {/* Modal Header */}
+              <View style={styles.modalHeader}>
+                <TouchableOpacity 
+                  style={styles.closeButton}
+                  onPress={hideCollectionModal}
+                  activeOpacity={0.7}
+                >
+                  <FontAwesomeIcon icon={faTimes} size={18} color="#6B7280" />
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Add Collection</Text>
+                {selectedCustomer && (
+                  <Text style={styles.modalSubtitle}>{selectedCustomer.name}</Text>
+                )}
+              </View>
+
+              {/* Modal Content */}
+              <View style={styles.modalContent}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Collection Amount</Text>
+                  <View style={styles.amountInputContainer}>
+                    <FontAwesomeIcon icon={faRupeeSign} size={16} color="#6B7280" />
+                    <TextInput
+                      style={styles.amountInput}
+                      placeholder="Enter amount"
+                      placeholderTextColor="#9CA3AF"
+                      value={collectionAmount}
+                      onChangeText={setCollectionAmount}
+                      keyboardType="numeric"
+                      returnKeyType="next"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Password</Text>
+                  <View style={styles.passwordInputContainer}>
+                    <TextInput
+                      style={styles.passwordInput}
+                      placeholder="Enter password"
+                      placeholderTextColor="#9CA3AF"
+                      value={password}
+                      onChangeText={(text) => {
+                        setPassword(text);
+                        setPasswordError('');
+                      }}
+                      secureTextEntry={!showPassword}
+                      returnKeyType="done"
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeButton}
+                      onPress={() => setShowPassword(!showPassword)}
+                      activeOpacity={0.7}
+                    >
+                      <FontAwesomeIcon 
+                        icon={showPassword ? faEyeSlash : faEye} 
+                        size={16} 
+                        color="#6B7280" 
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  {passwordError ? (
+                    <Text style={styles.errorText}>{passwordError}</Text>
+                  ) : null}
+                </View>
+              </View>
+
+              {/* Modal Actions */}
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={hideCollectionModal}
+                  disabled={isProcessing}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={handleAddCollection}
+                  disabled={isProcessing}
+                  activeOpacity={0.7}
+                >
+                  {isProcessing ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <FontAwesomeIcon icon={faCheck} size={14} color="#FFFFFF" />
+                      <Text style={styles.confirmButtonText}>Add Collection</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -535,9 +489,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#FFFFFF',
     fontWeight: '600',
-    fontFamily: 'DMSans-Regular',
+   fontFamily: 'DMSans-Bold',
   },
-  cancelButton: {
+  headerCancelButton: {
     fontSize: 14,
     color: '#FFFFFF',
     fontWeight: '500',
@@ -566,7 +520,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     paddingVertical: 12,
     paddingLeft: 12,
-    fontFamily: 'DMSans-Regular',
+   fontFamily: 'DMSans-Medium',
   },
   clearButton: {
     padding: 4,
@@ -579,11 +533,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
+    marginTop:15,
     fontSize: 18,
     color: '#1F2937',
-    fontWeight: '700',
     marginBottom: 16,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   resultsContainer: {
     gap: 12,
@@ -623,15 +577,14 @@ const styles = StyleSheet.create({
   customerName: {
     fontSize: 16,
     color: '#1F2937',
-    fontWeight: '700',
     marginBottom: 2,
-    fontFamily: 'DMSans-Regular',
+   fontFamily: 'DMSans-Bold',
   },
   customerAccount: {
     fontSize: 12,
     color: '#6B7280',
     marginBottom: 8,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   statusBadge: {
     flexDirection: 'row',
@@ -650,7 +603,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 10,
     fontWeight: '600',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   collectButton: {
     backgroundColor: '#6739B7',
@@ -665,7 +618,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   customerDetails: {
     marginBottom: 12,
@@ -679,7 +632,7 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 12,
     color: '#6B7280',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   customerStats: {
     flexDirection: 'row',
@@ -695,13 +648,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#6B7280',
     marginBottom: 4,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   statValue: {
     fontSize: 14,
     color: '#1F2937',
-    fontWeight: '700',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   noResultsContainer: {
     alignItems: 'center',
@@ -713,16 +665,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 16,
     marginBottom: 8,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   noResultsSubtitle: {
     fontSize: 14,
     color: '#6B7280',
     textAlign: 'center',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
 
-  // Modal Styles
+  // Modal Styles - Simplified
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -750,7 +702,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 24,
     elevation: 16,
-    overflow: 'hidden',
   },
   modalHeader: {
     alignItems: 'center',
@@ -772,15 +723,14 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '700',
     color: '#1F2937',
     marginBottom: 4,
-    fontFamily: 'DMSans-Regular',
+   fontFamily: 'DMSans-Bold',
   },
   modalSubtitle: {
     fontSize: 14,
     color: '#6B7280',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   modalContent: {
     padding: 24,
@@ -793,7 +743,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1F2937',
     fontWeight: '600',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   amountInputContainer: {
     flexDirection: 'row',
@@ -811,7 +761,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     paddingVertical: 12,
     paddingLeft: 12,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   passwordInputContainer: {
     flexDirection: 'row',
@@ -828,7 +778,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1F2937',
     paddingVertical: 12,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   eyeButton: {
     padding: 8,
@@ -837,7 +787,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#EF4444',
     marginTop: 4,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   modalActions: {
     flexDirection: 'row',
@@ -864,7 +814,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#64748B',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   confirmButton: {
     backgroundColor: '#6739B7',
@@ -873,7 +823,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
 });
 

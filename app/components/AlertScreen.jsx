@@ -26,7 +26,7 @@ const AlertScreen = () => {
       
       {/* Header */}
       <View style={styles.header}>       
-        <Text style={styles.headerTitle}>Notifications</Text>   
+        <Text style={styles.headerTitle}>Alerts</Text>   
       </View>
       {/* Under Construction Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#FFFFFF',
     fontWeight: '600',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   markAllButton: {
     padding: 4,
@@ -142,9 +142,9 @@ const styles = StyleSheet.create({
   constructionTitle: {
     fontSize: 28,
     color: '#6B46C1',
-    fontWeight: '700',
     marginBottom: 8,
     textAlign: 'center',
+    fontFamily: 'DMSans-Bold',
   },
   constructionSubtitle: {
     fontSize: 16,
@@ -152,6 +152,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 32,
     lineHeight: 22,
+    fontFamily: 'DMSans-Medium',
   },
   featuresContainer: {
     width: '100%',

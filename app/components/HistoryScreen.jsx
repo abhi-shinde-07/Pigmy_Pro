@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#FFFFFF',
     fontWeight: '600',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   transactionList: {
     flex: 1,
@@ -387,22 +387,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#1F2937',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
     marginBottom: 4,
   },
   dateTime: {
     fontSize: 13,
     color: '#6B7280',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   transactionRight: {
     alignItems: 'flex-end',
   },
   amount: {
     fontSize: 16,
-    fontWeight: '700',
     color: '#22C55E',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   emptyState: {
     flex: 1,
@@ -423,14 +422,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#6B7280',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
     color: '#9CA3AF',
     textAlign: 'center',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   bottomPadding: {
     height: 20,

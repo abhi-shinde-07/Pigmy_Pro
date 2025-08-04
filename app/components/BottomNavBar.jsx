@@ -151,8 +151,7 @@ const BottomNavBar = ({ state, descriptors, navigation }) => {
                 style={styles.specialIcon}
               />
               
-              {/* Static pulse indicator */}
-              <View style={styles.pulseIndicator} />
+            
             </TouchableOpacity>
           </Animated.View>
         </View>
@@ -207,6 +206,7 @@ const BottomNavBar = ({ state, descriptors, navigation }) => {
 const styles = StyleSheet.create({
   mainContainer: {
     position: 'relative',
+    backgroundColor: '#F8FAFC',
   },
   container: {
     backgroundColor: '#FFFFFF',
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#9CA3AF',
     fontWeight: '500',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
     marginTop: 2,
   },
   activeNavLabel: {
@@ -308,20 +308,6 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
-  },
-  pulseIndicator: {
-    position: 'absolute',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#10B981',
-    top: 8,
-    right: 8,
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-    elevation: 5,
   },
 });
 

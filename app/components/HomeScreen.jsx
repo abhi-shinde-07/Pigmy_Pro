@@ -1,20 +1,22 @@
 import {
-  faBell,
-  faBuilding,
+  faBuildingColumns,
   faCalendarDay,
   faChartLine,
   faCheckCircle,
   faClockRotateLeft,
   faDownload,
+  faQuestionCircle,
   faUpload,
   faUser,
   faUsers
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
+  Image,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -37,8 +39,8 @@ const dashboardData = {
       "mobileNumber": "9822475463"
     },
     "patsansthaInfo": {
-      "patname": "PuneUrban",
-      "fullname": "Pune Urban Cooperative Bank",
+      "patname": "Hadapsar - 412307",
+      "fullname": "Pune Urban Co-Operative Bank",
       "message": null,
       "messageUpdatedAt": null
     },
@@ -127,14 +129,13 @@ const dashboardData = {
 
 // Bank Logo Component (similar to PhonePe style)
 const BankLogo = () => (
-  <View style={styles.bankLogoContainer}>
-    <View style={styles.bankLogo}>
-      <FontAwesomeIcon icon={faBuilding} size={24} color="#FFFFFF" />
-    </View>
+  <View style={styles.bankLogo}>
+    <FontAwesomeIcon icon={faBuildingColumns} size={28} color="#FFFFFF" />
   </View>
 );
 
 const HomeScreen = () => {
+  const navigation = useNavigation();
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -186,28 +187,32 @@ const HomeScreen = () => {
       
       {/* Header */}
       <View style={styles.header}>
-        {/* Bank Info Section */}
-        <View style={styles.bankInfoSection}>
-          <View style={styles.bankInfo}>
+        {/* Header Background Image */}
+        <Image 
+          source={require('../../assets/images/HomeScreen.png')} 
+          style={styles.headerBackgroundImage}
+          resizeMode="stretch"
+        />
+        
+        {/* Header Content Overlay */}
+        <View style={styles.headerOverlay}>
+          {/* Top Corner Icons */}
+          <View style={styles.topCornerIcons}>
+            <TouchableOpacity style={styles.profileIcon}  onPress={() => navigation.navigate('Profile')}>
+              <FontAwesomeIcon icon={faUser} size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.helpIcon} onPress={() => navigation.navigate('HelpDesk')}
+>
+              <FontAwesomeIcon icon={faQuestionCircle} size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+          
+          {/* Centered Bank Info Section */}
+          <View style={styles.bankInfoSection}>
             <BankLogo />
-            <View style={styles.bankDetails}>
-              <Text style={styles.bankName}>{data?.patsansthaInfo?.fullname}</Text>
-              <Text style={styles.bankCode}>{data?.patsansthaInfo?.patname}</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <FontAwesomeIcon icon={faBell} size={18} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Agent Info */}
-        <View style={styles.agentInfo}>
-          <View style={styles.agentAvatar}>
-            <FontAwesomeIcon icon={faUser} size={16} color="#6739B7" />
-          </View>
-          <View>
-            <Text style={styles.agentName}>Agent: {data?.agentInfo?.agentname?.toUpperCase()}</Text>
-            <Text style={styles.agentNumber}>ID: {data?.agentInfo?.agentno}</Text>
+            <Text style={styles.bankName}>{data?.patsansthaInfo?.fullname}</Text>
+            <Text style={styles.bankCode}>{data?.patsansthaInfo?.patname}</Text>
           </View>
         </View>
       </View>
@@ -308,94 +313,103 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#6739B7',
-    fontWeight: '600',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
+    lineHeight: 24,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   header: {
     backgroundColor: '#6739B7',
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 30,
-    fontFamily: 'DMSans-Regular',
+    position: 'relative',
+    overflow: 'hidden',
+    minHeight: 220,
   },
-  bankInfoSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-    fontFamily: 'DMSans-Regular',
+  headerBackgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: width,
+    height: 235,
+    opacity: 0.4,
   },
-  bankInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerOverlay: {
+    position: 'relative',
+    zIndex: 1,
     flex: 1,
-    fontFamily: 'DMSans-Regular',
   },
-  bankLogoContainer: {
-    marginRight: 12,
+  topCornerIcons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
   },
-  bankLogo: {
-    width: 48,
-    height: 48,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 12,
+  cornerIcon: {
+    width: 36,
+    height: 36,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
     backdropFilter: 'blur(10px)',
   },
-  bankDetails: {
-    flex: 1,
-    fontFamily: 'DMSans-Regular',
-  },
-  bankName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 2,
-    fontFamily: 'DMSans-Regular',
-  },
-  bankCode: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontFamily: 'DMSans-Regular',
-  },
-  notificationButton: {
-    width: 40,
-    height: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  profileIcon: {
+    width: 32,
+    height: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    backdropFilter: 'blur(8px)',
   },
-  agentInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    fontFamily: 'DMSans-Regular',
-  },
-  agentAvatar: {
+  helpIcon: {
     width: 32,
     height: 32,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
-  agentName: {
-    fontSize: 14,
-    fontWeight: '600',
+  bankInfoSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    marginTop: 20,
+  },
+  bankLogo: {
+    width: 60,
+    height: 60,
+    backgroundColor: 'rgba(175, 126, 207, 0.3)',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backdropFilter: 'blur(10px)',
+    marginBottom: 16,
+  },
+  bankName: {
+    fontSize: 18,
     color: '#FFFFFF',
-    marginBottom: 2,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 8,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
-  agentNumber: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontFamily: 'DMSans-Regular',
+  bankCode: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontFamily: 'DMSans-Medium',
+    lineHeight: 18,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   scrollView: {
     flex: 1,
@@ -428,23 +442,30 @@ const styles = StyleSheet.create({
   },
   collectionHeaderText: {
     fontSize: 16,
-    fontWeight: '600',
     color: '#1F2937',
     marginLeft: 8,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
+    lineHeight: 22,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   collectionAmount: {
     fontSize: 36,
-    fontWeight: '800',
     color: '#6739B7',
+    fontFamily: 'DMSans-Medium',
+    lineHeight: 44,
     marginBottom: 8,
-    fontFamily: 'DMSans-Regular',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   collectionSubtext: {
     fontSize: 14,
     color: '#6B7280',
     marginBottom: 24,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
+    lineHeight: 20,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   collectionActions: {
     flexDirection: 'row',
@@ -460,6 +481,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     gap: 8,
+    minHeight: 48,
   },
   secondaryButton: {
     backgroundColor: 'rgba(103, 57, 183, 0.1)',
@@ -468,13 +490,15 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: 14,
-    fontWeight: '600',
     color: '#FFFFFF',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
+    lineHeight: 20,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   secondaryButtonText: {
     color: '#6739B7',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   statsContainer: {
     paddingHorizontal: 20,
@@ -500,6 +524,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+    minHeight: 120,
+    justifyContent: 'center',
   },
   statIcon: {
     width: 48,
@@ -511,15 +537,21 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: 24,
-    fontWeight: '700',
     color: '#1F2937',
+    fontFamily: 'DMSans-Bold',
+    lineHeight: 32,
     marginBottom: 4,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   statLabel: {
     fontSize: 12,
     color: '#6B7280',
     textAlign: 'center',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
+    lineHeight: 16,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
 });
 

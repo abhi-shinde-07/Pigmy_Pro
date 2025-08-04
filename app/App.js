@@ -1,3 +1,4 @@
+import * as Font from 'expo-font';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { AppState, PanResponder, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -7,6 +8,7 @@ import { AuthContext, AuthProvider } from './context/AuthContext';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AlertScreen from './components/AlertScreen';
 import BottomNavBar from './components/BottomNavBar';
+import HelpDeskScreen from './components/HelpDeskScreen'; // ✅ NEW
 import HistoryScreen from './components/HistoryScreen';
 import HomeScreen from './components/HomeScreen';
 import LoginScreen from './components/LoginScreen';
@@ -17,12 +19,31 @@ import SplashScreen from './components/SplashScreen';
 
 const Tab = createBottomTabNavigator();
 
+export const FONTS = {
+  'DMSans-Medium': require('../assets/fonts/DMSans_18pt-Medium.ttf'),
+  'DMSans-Bold': require('../assets/fonts/DMSans_24pt-Bold.ttf'),
+};
+
 const MainApp = () => {
   const { user, pinRequired, resetInactivityTimer } = useContext(AuthContext);
   const [showSplash, setShowSplash] = useState(true);
   const [appReady, setAppReady] = useState(false);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
 
-  // 🔄 Reset timer when app comes to foreground
+  useEffect(() => {
+    async function loadFonts() {
+      try {
+        await Font.loadAsync(FONTS);
+        console.log('✅ Custom fonts loaded successfully');
+        setFontsLoaded(true);
+      } catch (error) {
+        console.warn('❌ Error loading fonts:', error);
+        setFontsLoaded(true);
+      }
+    }
+    loadFonts();
+  }, []);
+
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') resetInactivityTimer?.();
@@ -30,32 +51,28 @@ const MainApp = () => {
     return () => sub.remove();
   }, [resetInactivityTimer]);
 
-  // 🔄 Reset timer on any screen tap
   const handleUserInteraction = useCallback(() => {
     resetInactivityTimer?.();
   }, [resetInactivityTimer]);
 
-  // PanResponder to detect touch without interfering with scrolling
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => {
       handleUserInteraction();
-      return false; // Don't capture the gesture, let it pass through
+      return false;
     },
     onMoveShouldSetPanResponder: () => false,
   });
 
-  // Splash handling
   useEffect(() => {
-    if (!showSplash && !appReady) {
+    if (!showSplash && !appReady && fontsLoaded) {
       setTimeout(() => setAppReady(true), 300);
     }
-  }, [showSplash, appReady]);
+  }, [showSplash, appReady, fontsLoaded]);
 
-  if (showSplash || !appReady) {
+  if (showSplash || !appReady || !fontsLoaded) {
     return <SplashScreen onAnimationComplete={() => setShowSplash(false)} />;
   }
 
-  // ⏳ Show Pin Screen if timeout reached
   if (pinRequired && user) return <PinScreen />;
 
   return (
@@ -73,6 +90,11 @@ const MainApp = () => {
             <Tab.Screen name="Search" component={SearchScreen} />
             <Tab.Screen name="History" component={HistoryScreen} />
             <Tab.Screen name="Profile" component={ProfileScreen} />
+            <Tab.Screen
+              name="HelpDesk"
+              component={HelpDeskScreen}
+              options={{ tabBarButton: () => null }} // ✅ Hide from tab bar
+            />
           </Tab.Navigator>
         )}
       </View>
