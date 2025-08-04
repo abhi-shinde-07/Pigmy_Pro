@@ -115,58 +115,24 @@ const PinModal = ({
     );
   };
 
-  const renderKeypad = () => {
-    const keys = [
-      ['1', '2', '3'],
-      ['4', '5', '6'],
-      ['7', '8', '9'],
-      ['', '0', 'backspace'],
-    ];
-
-    return (
-      <View style={styles.keypad}>
-        {keys.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.keypadRow}>
-            {row.map((key, keyIndex) => {
-              if (key === '') {
-                return <View key={keyIndex} style={styles.keypadButton} />;
-              }
-              
-              if (key === 'backspace') {
-                return (
-                  <TouchableOpacity
-                    key={keyIndex}
-                    style={[styles.keypadButton, styles.backspaceButton]}
-                    onPress={handleBackspace}
-                    activeOpacity={0.7}
-                    disabled={pin.length === 0}
-                  >
-                    <FontAwesomeIcon 
-                      icon={faBackspace} 
-                      size={20} 
-                      color={pin.length === 0 ? '#9CA3AF' : '#6B7280'} 
-                    />
-                  </TouchableOpacity>
-                );
-              }
-
-              return (
-                <TouchableOpacity
-                  key={keyIndex}
-                  style={styles.keypadButton}
-                  onPress={() => handlePinPress(key)}
-                  activeOpacity={0.7}
-                  disabled={pin.length >= 4}
-                >
-                  <Text style={styles.keypadButtonText}>{key}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
-      </View>
-    );
-  };
+  const renderNumpadButton = (value, onPress, style = {}) => (
+    <TouchableOpacity
+      style={[styles.numpadButton, style]}
+      onPress={onPress}
+      activeOpacity={0.7}
+      disabled={value === 'backspace' && pin.length === 0}
+    >
+      {value === 'backspace' ? (
+        <FontAwesomeIcon 
+          icon={faBackspace} 
+          size={18} 
+          color={pin.length === 0 ? '#9CA3AF' : '#6B7280'} 
+        />
+      ) : (
+        <Text style={styles.numpadButtonText}>{value}</Text>
+      )}
+    </TouchableOpacity>
+  );
 
   return (
     <Modal
@@ -202,7 +168,7 @@ const PinModal = ({
               
               <View style={styles.headerContent}>
                 <View style={styles.lockIconContainer}>
-                  <FontAwesomeIcon icon={faLock} size={32} color="#6739B7" />
+                  <FontAwesomeIcon icon={faLock} size={24} color="#FFFFFF" />
                 </View>
                 <Text style={styles.modalTitle}>Enter PIN</Text>
                 <Text style={styles.modalSubtitle}>
@@ -211,37 +177,61 @@ const PinModal = ({
               </View>
             </View>
 
-            {/* PIN Input */}
-            <View style={styles.pinSection}>
-              {renderPinDots()}
-              
-              {pinError ? (
-                <Text style={styles.errorText}>{pinError}</Text>
-              ) : (
-                <Text style={styles.pinHint}>Enter your 4-digit PIN</Text>
-              )}
-            </View>
+            {/* Modal Content */}
+            <View style={styles.modalContent}>
+              {/* PIN Input */}
+              <View style={styles.pinSection}>
+                {renderPinDots()}
+                
+                {pinError ? (
+                  <Text style={styles.errorText}>{pinError}</Text>
+                ) : (
+                  <Text style={styles.pinHint}>Enter your 4-digit PIN</Text>
+                )}
+              </View>
 
-            {/* Transaction Summary */}
-            <View style={styles.transactionSummary}>
-              <Text style={styles.summaryTitle}>Transaction Summary</Text>
-              <View style={styles.summaryContent}>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Customer:</Text>
-                  <Text style={styles.summaryValue}>{customer?.name}</Text>
+              {/* Transaction Summary */}
+              <View style={styles.transactionSummary}>
+                <Text style={styles.summaryTitle}>Transaction Summary</Text>
+                <View style={styles.summaryContent}>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Customer:</Text>
+                    <Text style={styles.summaryValue}>{customer?.name}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Amount:</Text>
+                    <Text style={styles.summaryAmount}>{formatCurrency(amount || 0)}</Text>
+                  </View>
                 </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Amount:</Text>
-                  <Text style={styles.summaryAmount}>{formatCurrency(amount || 0)}</Text>
+              </View>
+
+              {/* Custom Numpad */}
+              <View style={styles.numpadContainer}>
+                <View style={styles.numpadRow}>
+                  {renderNumpadButton('1', () => handlePinPress('1'))}
+                  {renderNumpadButton('2', () => handlePinPress('2'))}
+                  {renderNumpadButton('3', () => handlePinPress('3'))}
+                </View>
+                <View style={styles.numpadRow}>
+                  {renderNumpadButton('4', () => handlePinPress('4'))}
+                  {renderNumpadButton('5', () => handlePinPress('5'))}
+                  {renderNumpadButton('6', () => handlePinPress('6'))}
+                </View>
+                <View style={styles.numpadRow}>
+                  {renderNumpadButton('7', () => handlePinPress('7'))}
+                  {renderNumpadButton('8', () => handlePinPress('8'))}
+                  {renderNumpadButton('9', () => handlePinPress('9'))}
+                </View>
+                <View style={styles.numpadRow}>
+                  <View style={styles.numpadButton} />
+                  {renderNumpadButton('0', () => handlePinPress('0'))}
+                  {renderNumpadButton('backspace', handleBackspace, styles.backspaceButton)}
                 </View>
               </View>
             </View>
 
-            {/* Keypad */}
-            {renderKeypad()}
-
             {/* Confirm Button */}
-            <View style={styles.actionContainer}>
+            <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[
                   styles.confirmButton,
@@ -271,10 +261,10 @@ const PinModal = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   overlayTouchable: {
     position: 'absolute',
@@ -283,29 +273,30 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: '100%',
-    maxWidth: 360, // slightly smaller
+    maxWidth: 400,
   },
   modal: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-    elevation: 15,
-    paddingVertical: 12, // reduced vertical padding
+    shadowOffset: {
+      width: 0,
+      height: 16,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 16,
   },
   modalHeader: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
-    alignItems: 'center',
+    position: 'relative',
   },
   closeButton: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 12,
+    right: 12,
     width: 28,
     height: 28,
     borderRadius: 14,
@@ -314,21 +305,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 1,
   },
+  headerContent: {
+    alignItems: 'center',
+  },
   lockIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(103, 57, 183, 0.1)',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#6739B7',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     color: '#1F2937',
     fontWeight: '700',
     fontFamily: 'DMSans-Bold',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   modalSubtitle: {
     fontSize: 12,
@@ -336,15 +330,17 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans-Medium',
     textAlign: 'center',
   },
+  modalContent: {
+    padding: 18,
+    gap: 16,
+  },
   pinSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
     alignItems: 'center',
+    gap: 8,
   },
   pinDotsContainer: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 10,
   },
   pinDot: {
     width: 14,
@@ -371,8 +367,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   transactionSummary: {
-    marginHorizontal: 16,
-    marginBottom: 16,
     backgroundColor: '#F8FAFC',
     borderRadius: 12,
     padding: 12,
@@ -408,47 +402,55 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   summaryAmount: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#6739B7',
     fontWeight: '700',
     fontFamily: 'DMSans-Bold',
   },
-  keypad: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
+  // Numpad Styles (matching CollectionModal)
+  numpadContainer: {
+    gap: 6,
   },
-  keypadRow: {
+  numpadRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+    gap: 6,
   },
-  keypadButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  numpadButton: {
+    flex: 1,
+    aspectRatio: 1.8,
     backgroundColor: '#F8FAFC',
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  backspaceButton: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
-  },
-  keypadButtonText: {
-    fontSize: 20,
+  numpadButtonText: {
+    fontSize: 18,
     color: '#1F2937',
     fontWeight: '600',
     fontFamily: 'DMSans-Bold',
   },
-  actionContainer: {
-    paddingHorizontal: 16,
+  backspaceButton: {
+    backgroundColor: 'rgba(239, 68, 68, 0.05)',
+    borderColor: 'rgba(239, 68, 68, 0.2)',
+  },
+  modalActions: {
+    paddingHorizontal: 18,
+    paddingBottom: 18,
   },
   confirmButton: {
     backgroundColor: '#6739B7',
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -464,6 +466,5 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans-Bold',
   },
 });
-
 
 export default PinModal;

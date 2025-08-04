@@ -74,31 +74,48 @@ const ProfileScreen = () => {
 
   const { user, logout } = authContext;
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [isAnimatingIn, setIsAnimatingIn] = useState(false);
-  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   
-  // Use useRef to avoid re-creating Animated.Value on every render
+  // Use refs for animations that persist across renders
   const dialogAnimation = useRef(new Animated.Value(0)).current;
   const overlayAnimation = useRef(new Animated.Value(0)).current;
 
-  // Reset animation values when dialog is closed
+  const showDialog = useCallback(() => {
+    setShowLogoutDialog(true);
+  }, []);
+
+  const hideDialog = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(overlayAnimation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(dialogAnimation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowLogoutDialog(false);
+    });
+  }, [overlayAnimation, dialogAnimation]);
+
+  const handleLogout = useCallback(() => {
+    hideDialog();
+    // Use setTimeout to ensure dialog closes before logout
+    setTimeout(() => {
+      logout();
+    }, 300);
+  }, [hideDialog, logout]);
+
+  // Animate in when dialog shows
   useEffect(() => {
-    if (!showLogoutDialog) {
+    if (showLogoutDialog) {
+      // Reset values
       dialogAnimation.setValue(0);
       overlayAnimation.setValue(0);
-      setIsAnimatingIn(false);
-      setIsAnimatingOut(false);
-    }
-  }, [showLogoutDialog, dialogAnimation, overlayAnimation]);
-
-  const showDialog = useCallback(() => {
-    if (isAnimatingIn || isAnimatingOut) return; // Prevent multiple animations
-    
-    setShowLogoutDialog(true);
-    setIsAnimatingIn(true);
-    
-    // Use setTimeout instead of requestAnimationFrame for better compatibility
-    setTimeout(() => {
+      
+      // Animate in
       Animated.parallel([
         Animated.timing(overlayAnimation, {
           toValue: 1,
@@ -111,51 +128,16 @@ const ProfileScreen = () => {
           friction: 8,
           useNativeDriver: true,
         }),
-      ]).start(() => {
-        setIsAnimatingIn(false);
-      });
-    }, 10);
-  }, [overlayAnimation, dialogAnimation, isAnimatingIn, isAnimatingOut]);
-
-  const hideDialog = useCallback(() => {
-    if (isAnimatingIn || isAnimatingOut) return; // Prevent multiple animations
-    
-    setIsAnimatingOut(true);
-    
-    Animated.parallel([
-      Animated.timing(overlayAnimation, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.spring(dialogAnimation, {
-        toValue: 0,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setShowLogoutDialog(false);
-      setIsAnimatingOut(false);
-    });
-  }, [overlayAnimation, dialogAnimation, isAnimatingIn, isAnimatingOut]);
-
-  const handleLogout = useCallback(() => {
-    if (isAnimatingOut) return; // Prevent multiple logout calls
-    
-    hideDialog();
-    // Use setTimeout to ensure dialog closes before logout
-    setTimeout(() => {
-      logout();
-    }, 300);
-  }, [hideDialog, logout, isAnimatingOut]);
+      ]).start();
+    }
+  }, [showLogoutDialog, dialogAnimation, overlayAnimation]);
 
   const formatCurrency = useCallback((amount) => {
     return `₹${amount.toLocaleString('en-IN')}`;
   }, []);
 
   const LogoutDialog = () => {
-    // Don't render anything if not showing
+    // Don't render Modal if not showing - this prevents the useInsertionEffect error
     if (!showLogoutDialog) return null;
     
     return (
@@ -210,7 +192,6 @@ const ProfileScreen = () => {
                   style={styles.closeButton}
                   onPress={hideDialog}
                   activeOpacity={0.7}
-                  disabled={isAnimatingOut}
                 >
                   <FontAwesomeIcon icon={faTimes} size={18} color="#6B7280" />
                 </TouchableOpacity>
@@ -227,7 +208,6 @@ const ProfileScreen = () => {
                   style={[styles.dialogButton, styles.cancelButton]}
                   onPress={hideDialog}
                   activeOpacity={0.8}
-                  disabled={isAnimatingOut}
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
@@ -236,7 +216,6 @@ const ProfileScreen = () => {
                   style={[styles.dialogButton, styles.confirmButton]}
                   onPress={handleLogout}
                   activeOpacity={0.8}
-                  disabled={isAnimatingOut}
                 >
                   <Text style={styles.confirmButtonText}>Sign Out</Text>
                 </TouchableOpacity>
@@ -362,7 +341,6 @@ const ProfileScreen = () => {
             style={styles.logoutButton}
             onPress={showDialog}
             activeOpacity={0.8}
-            disabled={isAnimatingIn || isAnimatingOut}
           >
             <FontAwesomeIcon icon={faSignOutAlt} size={16} color="#EF4444" />
             <Text style={styles.logoutText}>Log Out</Text>

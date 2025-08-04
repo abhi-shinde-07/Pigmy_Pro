@@ -1,4 +1,5 @@
 import {
+    faBackspace,
     faRupeeSign,
     faTimes,
     faUser,
@@ -69,6 +70,41 @@ const CollectionModal = ({
     setAmountError('');
   };
 
+  const handleNumberPress = (number) => {
+    const newAmount = collectionAmount + number;
+    handleAmountChange(newAmount);
+  };
+
+  const handleDecimalPress = () => {
+    if (!collectionAmount.includes('.')) {
+      const newAmount = collectionAmount ? collectionAmount + '.' : '0.';
+      setCollectionAmount(newAmount);
+      setAmountError('');
+    }
+  };
+
+  const handleBackspace = () => {
+    if (collectionAmount.length > 0) {
+      const newAmount = collectionAmount.slice(0, -1);
+      setCollectionAmount(newAmount);
+      setAmountError('');
+    }
+  };
+
+  const renderNumpadButton = (value, onPress, style = {}) => (
+    <TouchableOpacity
+      style={[styles.numpadButton, style]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      {value === 'backspace' ? (
+        <FontAwesomeIcon icon={faBackspace} size={20} color="#6B7280" />
+      ) : (
+        <Text style={styles.numpadButtonText}>{value}</Text>
+      )}
+    </TouchableOpacity>
+  );
+
   return (
     <Modal
       visible={visible}
@@ -126,48 +162,41 @@ const CollectionModal = ({
                     keyboardType="decimal-pad"
                     returnKeyType="done"
                     onSubmitEditing={handleNext}
-                    autoFocus
+                    showSoftInputOnFocus={false} // Disable system keyboard
                   />
                 </View>
-                
-                {/* Amount Preview */}
-                {collectionAmount && parseFloat(collectionAmount) > 0 && (
-                  <View style={styles.amountPreview}>
-                    <Text style={styles.amountPreviewText}>
-                      {formatCurrency(parseFloat(collectionAmount))}
-                    </Text>
-                  </View>
-                )}
+
                 
                 {amountError ? (
                   <Text style={styles.errorText}>{amountError}</Text>
                 ) : null}
               </View>
 
-              {/* Quick Amount Buttons */}
-              <View style={styles.quickAmountContainer}>
-                <Text style={styles.quickAmountLabel}>Quick Amount</Text>
-                <View style={styles.quickAmountButtons}>
-                  {[500, 1000, 2000, 5000].map((amount) => (
-                    <TouchableOpacity
-                      key={amount}
-                      style={[
-                        styles.quickAmountButton,
-                        collectionAmount === amount.toString() ? styles.quickAmountButtonActive : null
-                      ]}
-                      onPress={() => handleAmountChange(amount.toString())}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[
-                        styles.quickAmountButtonText,
-                        collectionAmount === amount.toString() ? styles.quickAmountButtonTextActive : null
-                      ]}>
-                        ₹{amount.toLocaleString('en-IN')}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+              {/* Custom Numpad */}
+              <View style={styles.numpadContainer}>
+                <View style={styles.numpadRow}>
+                  {renderNumpadButton('1', () => handleNumberPress('1'))}
+                  {renderNumpadButton('2', () => handleNumberPress('2'))}
+                  {renderNumpadButton('3', () => handleNumberPress('3'))}
+                </View>
+                <View style={styles.numpadRow}>
+                  {renderNumpadButton('4', () => handleNumberPress('4'))}
+                  {renderNumpadButton('5', () => handleNumberPress('5'))}
+                  {renderNumpadButton('6', () => handleNumberPress('6'))}
+                </View>
+                <View style={styles.numpadRow}>
+                  {renderNumpadButton('7', () => handleNumberPress('7'))}
+                  {renderNumpadButton('8', () => handleNumberPress('8'))}
+                  {renderNumpadButton('9', () => handleNumberPress('9'))}
+                </View>
+                <View style={styles.numpadRow}>
+                  {renderNumpadButton('.', handleDecimalPress)}
+                  {renderNumpadButton('0', () => handleNumberPress('0'))}
+                  {renderNumpadButton('backspace', handleBackspace, styles.backspaceButton)}
                 </View>
               </View>
+
+
             </View>
 
             {/* Modal Actions */}
@@ -235,18 +264,18 @@ const styles = StyleSheet.create({
     elevation: 16,
   },
   modalHeader: {
-    padding: 24,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
     position: 'relative',
   },
   closeButton: {
     position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    top: 12,
+    right: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#F8FAFC',
     justifyContent: 'center',
     alignItems: 'center',
@@ -256,27 +285,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   customerAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: '#6739B7',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     color: '#1F2937',
-    fontWeight: '700',
     fontFamily: 'DMSans-Bold',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   customerName: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#1F2937',
     fontWeight: '600',
     fontFamily: 'DMSans-Bold',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   customerAccount: {
     fontSize: 12,
@@ -284,26 +312,26 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans-Medium',
   },
   modalContent: {
-    padding: 24,
-    gap: 24,
+    padding: 18,
+    gap: 16,
   },
   inputGroup: {
     gap: 8,
   },
   inputLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#1F2937',
     fontWeight: '600',
     fontFamily: 'DMSans-Bold',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   amountInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
     borderWidth: 2,
     borderColor: '#E2E8F0',
   },
@@ -313,82 +341,68 @@ const styles = StyleSheet.create({
   },
   amountInput: {
     flex: 1,
-    fontSize: 24,
+    fontSize: 20,
     color: '#1F2937',
-    paddingVertical: 16,
-    paddingLeft: 12,
+    paddingVertical: 12,
+    paddingLeft: 10,
     fontFamily: 'DMSans-Bold',
     textAlign: 'left',
   },
-  amountPreview: {
-    backgroundColor: 'rgba(103, 57, 183, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginTop: 8,
-  },
-  amountPreviewText: {
-    fontSize: 18,
-    color: '#6739B7',
-    fontWeight: '600',
-    fontFamily: 'DMSans-Bold',
-    textAlign: 'center',
-  },
+
   errorText: {
     fontSize: 12,
     color: '#EF4444',
     marginTop: 4,
     fontFamily: 'DMSans-Medium',
   },
-  quickAmountContainer: {
-    gap: 12,
+  // Numpad Styles
+  numpadContainer: {
+    gap: 6,
   },
-  quickAmountLabel: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '600',
-    fontFamily: 'DMSans-Bold',
-  },
-  quickAmountButtons: {
+  numpadRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
-  quickAmountButton: {
+  numpadButton: {
     flex: 1,
-    minWidth: '45%',
+    aspectRatio: 1.8,
     backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    borderRadius: 10,
+    justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  quickAmountButtonActive: {
-    backgroundColor: 'rgba(103, 57, 183, 0.1)',
-    borderColor: '#6739B7',
-  },
-  quickAmountButtonText: {
-    fontSize: 14,
-    color: '#6B7280',
+  numpadButtonText: {
+    fontSize: 18,
+    color: '#1F2937',
     fontWeight: '600',
     fontFamily: 'DMSans-Bold',
   },
-  quickAmountButtonTextActive: {
-    color: '#6739B7',
+  backspaceButton: {
+    backgroundColor: 'rgba(239, 68, 68, 0.05)',
+    borderColor: 'rgba(239, 68, 68, 0.2)',
   },
+
   modalActions: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    gap: 12,
+    paddingHorizontal: 18,
+    paddingBottom: 18,
+    gap: 10,
   },
   modalButton: {
     flex: 1,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -398,7 +412,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#64748B',
     fontFamily: 'DMSans-Bold',
@@ -407,7 +421,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#6739B7',
   },
   nextButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'DMSans-Bold',
