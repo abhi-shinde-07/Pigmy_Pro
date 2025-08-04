@@ -4,6 +4,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Image,
   StatusBar,
   StyleSheet,
   Text,
@@ -12,149 +13,95 @@ import {
 
 const { width, height } = Dimensions.get('window');
 
-// Pigmy Pro Logo Component matching login page design
-const PigmyLogo = ({ scale, opacity, rotate }) => (
-  <Animated.View
-    style={[
-      styles.logoWrapper,
-      {
-        opacity: opacity,
-        transform: [
-          { scale: scale },
-          { rotate: rotate },
-        ],
-      },
-    ]}
-  >
-    <View style={styles.logoCircle}>
-      <View style={styles.logoInnerCircle}>
-        <View style={styles.letterContainer}>
-          <Text style={styles.logoLetter}>P</Text>
-        </View>
-        <View style={styles.accentDot} />
-      </View>
-    </View>
-  </Animated.View>
-);
-
-// TechyVerve Logo Component
-const TechyVerveLogo = ({ opacity }) => (
-  <Animated.View
-    style={[
-      styles.companyLogoContainer,
-      {
-        opacity: opacity,
-      },
-    ]}
-  >
-    <View style={styles.companyLogo}>
-      <Text style={styles.companyLogoText}>T</Text>
-    </View>
-  </Animated.View>
-);
-
 const SplashScreen = ({ onAnimationComplete }) => {
   // Animation values
   const logoScale = useRef(new Animated.Value(0)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
-  const textSlideY = useRef(new Animated.Value(50)).current;
+  const textSlideY = useRef(new Animated.Value(30)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
   const backgroundFade = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
   
-  // Glowing ring animation
+  // Modern glow effect
   const glowScale = useRef(new Animated.Value(0.8)).current;
   const glowOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Start the animation sequence
     startAnimation();
   }, []);
 
   const startAnimation = () => {
-    // Phase 1: Logo appears with scale and rotation
+    // Phase 1: Logo entrance with modern spring animation
     Animated.parallel([
-      // Logo scale up
       Animated.spring(logoScale, {
         toValue: 1,
-        tension: 100,
+        tension: 120,
         friction: 8,
         useNativeDriver: true,
       }),
-      // Logo fade in
       Animated.timing(logoOpacity, {
         toValue: 1,
-        duration: 800,
+        duration: 600,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      // Logo subtle rotation
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 1000,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      // Glowing ring effect
+      // Subtle glow effect
       Animated.sequence([
-        Animated.delay(200),
+        Animated.delay(150),
         Animated.parallel([
           Animated.timing(glowOpacity, {
-            toValue: 1,
-            duration: 600,
+            toValue: 0.6,
+            duration: 500,
             useNativeDriver: true,
           }),
           Animated.spring(glowScale, {
-            toValue: 1.2,
-            tension: 50,
+            toValue: 1.1,
+            tension: 60,
             friction: 8,
             useNativeDriver: true,
           }),
         ]),
       ]),
     ]).start(() => {
-      // Phase 2: Text slides up after logo animation
+      // Phase 2: Text animation
       setTimeout(() => {
         Animated.parallel([
           Animated.spring(textSlideY, {
             toValue: 0,
-            tension: 100,
+            tension: 120,
             friction: 10,
             useNativeDriver: true,
           }),
           Animated.timing(textOpacity, {
             toValue: 1,
-            duration: 600,
+            duration: 500,
             easing: Easing.out(Easing.quad),
             useNativeDriver: true,
           }),
         ]).start(() => {
-          // Phase 3: Pulse effect and completion
+          // Phase 3: Completion
           setTimeout(() => {
             startPulseEffect();
-            // Complete animation after pulse
             setTimeout(() => {
               completeAnimation();
-            }, 1000);
-          }, 500);
+            }, 800);
+          }, 400);
         });
-      }, 300);
+      }, 200);
     });
   };
 
   const startPulseEffect = () => {
-    // Create a subtle pulse effect
     Animated.sequence([
       Animated.timing(pulseAnim, {
-        toValue: 1.1,
-        duration: 400,
+        toValue: 1.05,
+        duration: 300,
         easing: Easing.inOut(Easing.quad),
         useNativeDriver: true,
       }),
       Animated.timing(pulseAnim, {
         toValue: 1,
-        duration: 400,
+        duration: 300,
         easing: Easing.inOut(Easing.quad),
         useNativeDriver: true,
       }),
@@ -162,21 +109,15 @@ const SplashScreen = ({ onAnimationComplete }) => {
   };
 
   const completeAnimation = () => {
-    // Fade out the splash screen
     Animated.timing(backgroundFade, {
       toValue: 0,
-      duration: 500,
+      duration: 400,
       easing: Easing.in(Easing.quad),
       useNativeDriver: true,
     }).start(() => {
       onAnimationComplete && onAnimationComplete();
     });
   };
-
-  const rotateInterpolate = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '3deg'],
-  });
 
   return (
     <Animated.View 
@@ -189,21 +130,21 @@ const SplashScreen = ({ onAnimationComplete }) => {
     >
       <StatusBar barStyle="light-content" backgroundColor="#6739B7" />
       
-      {/* Background gradient effect */}
+      {/* Modern gradient background */}
       <View style={styles.backgroundGradient} />
       
-      {/* Floating background elements */}
+      {/* Floating geometric elements */}
       <View style={styles.floatingElements}>
         <View style={[styles.floatingElement, styles.element1]} />
         <View style={[styles.floatingElement, styles.element2]} />
         <View style={[styles.floatingElement, styles.element3]} />
       </View>
 
-      {/* Main content container */}
+      {/* Main content */}
       <View style={styles.content}>
-        {/* Logo container with glow effect */}
+        {/* Logo section */}
         <View style={styles.logoContainer}>
-          {/* Glowing ring behind logo */}
+          {/* Glow effect */}
           <Animated.View
             style={[
               styles.glowRing,
@@ -214,28 +155,39 @@ const SplashScreen = ({ onAnimationComplete }) => {
             ]}
           />
           
-          {/* Main Pigmy Pro logo */}
-          <PigmyLogo 
-            scale={Animated.multiply(logoScale, pulseAnim)}
-            opacity={logoOpacity}
-            rotate={rotateInterpolate}
-          />
+          {/* PigmyPro Logo */}
+          <Animated.View
+            style={[
+              styles.logoWrapper,
+              {
+                opacity: logoOpacity,
+                transform: [
+                  { scale: Animated.multiply(logoScale, pulseAnim) }
+                ],
+              },
+            ]}
+          >
+            <Image 
+              source={require('../../assets/images/PigmyPro.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+              onError={(error) => console.log('Logo image error:', error)}
+            />
+          </Animated.View>
         </View>
 
-        {/* App name and tagline */}
+        {/* App branding */}
         <Animated.View
           style={[
-            styles.textContainer,
+            styles.brandingContainer,
             {
               opacity: textOpacity,
               transform: [{ translateY: textSlideY }],
             },
           ]}
         >
-          <View style={styles.brandContainer}>
-            <Text style={styles.appName}>Pigmy Pro</Text>
-            <Text style={styles.appSubtitle}>Agent Management</Text>
-          </View>
+
+          <Text style={styles.appSubtitle}>Agent Management</Text>
           
           <View style={styles.taglineContainer}>
             <View style={styles.taglineLine} />
@@ -243,37 +195,27 @@ const SplashScreen = ({ onAnimationComplete }) => {
             <View style={styles.taglineLine} />
           </View>
         </Animated.View>
-
-        {/* Loading indicator */}
-        <Animated.View
-          style={[
-            styles.loadingContainer,
-            {
-              opacity: textOpacity,
-            },
-          ]}
-        >
-        </Animated.View>
       </View>
 
       {/* Bottom branding */}
       <Animated.View
         style={[
-          styles.bottomBranding,
+          styles.bottomSection,
           {
             opacity: textOpacity,
           },
         ]}
       >
         <Text style={styles.poweredBy}>Powered by</Text>
-        <View style={styles.brandNameContainer}>
-          <TechyVerveLogo opacity={textOpacity} />
-          <View style={styles.brandTextContainer}>
-            <Text style={styles.brandName}>Techy</Text>
-            <Text style={styles.brandNameAccent}>Verve</Text>
-          </View>
+        <View style={styles.brandContainer}>
+          <Image 
+            source={require('../../assets/images/Techy_Verve.png')}
+            style={styles.companyLogo}
+            resizeMode="contain"
+            onError={(error) => console.log('Company logo error:', error)}
+          />
         </View>
-        <Text style={styles.brandTagline}>Innovative Solutions</Text>
+        <Text style={styles.copyright}>© 2024 All Rights Reserved</Text>
       </Animated.View>
     </Animated.View>
   );
@@ -300,28 +242,28 @@ const styles = StyleSheet.create({
   floatingElement: {
     position: 'absolute',
     borderRadius: 50,
-    opacity: 0.1,
+    opacity: 0.05,
   },
   element1: {
-    width: 120,
-    height: 120,
-    backgroundColor: '#FFFFFF',
-    top: '20%',
-    right: '10%',
-  },
-  element2: {
-    width: 80,
-    height: 80,
-    backgroundColor: '#9333EA',
-    top: '70%',
-    left: '15%',
-  },
-  element3: {
     width: 100,
     height: 100,
     backgroundColor: '#FFFFFF',
-    bottom: '30%',
-    right: '20%',
+    top: '15%',
+    right: '15%',
+  },
+  element2: {
+    width: 60,
+    height: 60,
+    backgroundColor: '#9333EA',
+    top: '65%',
+    left: '20%',
+  },
+  element3: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#FFFFFF',
+    bottom: '25%',
+    right: '25%',
   },
   content: {
     alignItems: 'center',
@@ -329,18 +271,18 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     position: 'relative',
-    marginBottom: 40,
+    marginBottom: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   glowRing: {
     position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
     backgroundColor: 'transparent',
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    top: -30,
-    left: -30,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   logoWrapper: {
     shadowColor: '#FFFFFF',
@@ -352,131 +294,43 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 16,
   },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+  logoImage: {
+    width: 300,
+    height: 300,
+    tintColor: '#FFFFFF',
+  },
+  brandingContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  logoInnerCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 15,
-    backgroundColor: '#6739B7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  letterContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoLetter: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    fontFamily: 'DMSans-Regular',
-    textAlign: 'center',
-    lineHeight: 28,
-  },
-  accentDot: {
-    position: 'absolute',
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FFFFFF',
-    top: 8,
-    right: 8,
-    opacity: 0.9,
-  },
-  textContainer: {
-    alignItems: 'center',
-    marginBottom: 60,
-    fontFamily: 'DMSans-Bold',
-  },
-  brandContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  appName: {
-    fontSize: 36,
-    color: '#FFFFFF',
-    fontWeight: '800',
-    letterSpacing: 1,
-    textAlign: 'center',
-    lineHeight: 42,
-    fontFamily: 'DMSans-Bold',
+    marginBottom: 50,
   },
   appSubtitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
     fontWeight: '500',
-    letterSpacing: 1,
-    marginTop: 4,
-    fontFamily: 'DMSans-Bold',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontFamily: 'DMSans-Regular',
   },
   taglineContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 8,
   },
   taglineLine: {
-    width: 30,
+    width: 25,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    marginHorizontal: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    marginHorizontal: 10,
   },
   tagline: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '500',
-    letterSpacing: 0.5,
-    fontFamily: 'DMSans-Bold',
-  },
-  loadingContainer: {
-    alignItems: 'center',
-  },
-  loadingDots: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 4,
-    opacity: 0.8,
-  },
-  dot1: {
-    animationDelay: '0s',
-  },
-  dot2: {
-    animationDelay: '0.2s',
-  },
-  dot3: {
-    animationDelay: '0.4s',
-  },
-  loadingText: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontWeight: '500',
-    fontFamily: 'DMSans-Bold',
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '400',
+    letterSpacing: 0.5,
+    fontFamily: 'DMSans-Regular',
   },
-  bottomBranding: {
+  bottomSection: {
     position: 'absolute',
     bottom: 50,
     alignItems: 'center',
@@ -484,54 +338,33 @@ const styles = StyleSheet.create({
   poweredBy: {
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 12,
-    fontWeight: '500',
+    marginBottom: 8,
+    fontWeight: '400',
     fontFamily: 'DMSans-Regular',
   },
-  brandNameContainer: {
+  brandContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
   },
-  companyLogoContainer: {
-    marginRight: 8,
-  },
   companyLogo: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 100,
+    height: 100,
+    tintColor: '#FFFFFF',
+    margin: -20,
   },
-  companyLogoText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#6739B7',
-    fontFamily: 'DMSans-Bold',
-  },
-  brandTextContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  brandName: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-    fontFamily: 'DMSans-Bold',
-  },
+ 
   brandNameAccent: {
-    fontSize: 16,
+    fontSize: 14,
     color: 'rgba(255, 255, 255, 0.9)',
-    letterSpacing: 0.5,
+    fontWeight: '600',
     fontFamily: 'DMSans-Bold',
   },
-  brandTagline: {
+  copyright: {
     fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'rgba(255, 255, 255, 0.4)',
     fontWeight: '400',
-    marginTop: 2,
-   fontFamily: 'DMSans-Bold',
+    fontFamily: 'DMSans-Regular',
   },
 });
 
