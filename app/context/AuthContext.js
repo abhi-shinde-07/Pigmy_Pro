@@ -6,7 +6,7 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const SESSION_TIMEOUT = 1000 * 60 * 60 * 12; // 12 hours
-  const PIN_TIMEOUT = 1000 * 5 ; // 10 minutes
+  const PIN_TIMEOUT = 1000 * 5 * 60; // 5 minutes
   const [user, setUser] = useState(null);
   const [pinRequired, setPinRequired] = useState(false);
   const sessionTimer = useRef(null);

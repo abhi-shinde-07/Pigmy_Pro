@@ -1,22 +1,17 @@
 import {
-  faCheck,
-  faEye,
-  faEyeSlash,
   faMapMarkerAlt,
   faPhone,
   faPlus,
-  faRupeeSign,
   faSearch,
   faTimes,
-  faUser,
+  faUser
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
   Dimensions,
-  Modal,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -26,19 +21,26 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AuthContext } from '../context/AuthContext.js';
+import CollectionModal from './CollectionModal.jsx';
+import PinModal from './PinModal.jsx';
+import SuccessTransactionScreen from './SuccessTransactionScreen.jsx';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const SearchScreen = () => {
+  const { resetInactivityTimer, verifyPin } = useContext(AuthContext);
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showCollectionModal, setShowCollectionModal] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [showSuccessScreen, setShowSuccessScreen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [collectionAmount, setCollectionAmount] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
+  const [collectionAmount, setCollectionAmount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [successData, setSuccessData] = useState(null);
+  
   const [customers, setCustomers] = useState([
     {
       id: 1,
@@ -139,6 +141,11 @@ const SearchScreen = () => {
     }).start();
   }, [searchQuery, fadeAnim]);
 
+  // Reset inactivity timer on user interaction
+  useEffect(() => {
+    resetInactivityTimer();
+  }, [resetInactivityTimer]);
+
   const filteredCustomers = useMemo(() => {
     return customers.filter(customer => {
       const matchesQuery = searchQuery === '' || 
@@ -151,61 +158,91 @@ const SearchScreen = () => {
     });
   }, [searchQuery, customers]);
 
-  const showCollectionModal = useCallback((customer) => {
+  const handleCollectPress = useCallback((customer) => {
     setSelectedCustomer(customer);
-    setShowPasswordModal(true);
-    setPassword('');
-    setCollectionAmount('');
-    setPasswordError('');
-    setShowPassword(false);
+    setShowCollectionModal(true);
   }, []);
 
-  const hideCollectionModal = useCallback(() => {
-    setShowPasswordModal(false);
-    setSelectedCustomer(null);
-    setPassword('');
-    setCollectionAmount('');
-    setPasswordError('');
-    setShowPassword(false);
+  const handleCollectionNext = useCallback((amount) => {
+    setCollectionAmount(amount);
+    setShowCollectionModal(false);
+    setShowPinModal(true);
   }, []);
 
-  const handleAddCollection = useCallback(() => {
-    if (password !== '1234') {
-      setPasswordError('Invalid password');
-      return;
-    }
-
-    if (!collectionAmount || parseFloat(collectionAmount) <= 0) {
-      setPasswordError('Please enter a valid amount');
-      return;
-    }
-
+  const handlePinConfirm = useCallback(async (pin) => {
     setIsProcessing(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      const updatedCustomers = customers.map(customer => {
-        if (customer.id === selectedCustomer.id) {
-          const newCollection = {
-            date: new Date().toISOString().split('T')[0],
-            amount: parseFloat(collectionAmount)
-          };
-          
-          return {
-            ...customer,
-            totalCollection: customer.totalCollection + parseFloat(collectionAmount),
-            lastCollection: newCollection.date,
-            collections: [newCollection, ...customer.collections]
-          };
-        }
-        return customer;
-      });
+    try {
+      const isValidPin = await verifyPin(pin);
       
-      setCustomers(updatedCustomers);
+      if (!isValidPin) {
+        setIsProcessing(false);
+        return false;
+      }
+
+      // Simulate API call
+      setTimeout(() => {
+        const transactionDate = new Date().toISOString();
+        const transactionId = `TXN${Date.now()}`;
+        
+        // Update customer data
+        const updatedCustomers = customers.map(customer => {
+          if (customer.id === selectedCustomer.id) {
+            const newCollection = {
+              date: transactionDate.split('T')[0],
+              amount: collectionAmount
+            };
+            
+            return {
+              ...customer,
+              totalCollection: customer.totalCollection + collectionAmount,
+              lastCollection: newCollection.date,
+              collections: [newCollection, ...customer.collections]
+            };
+          }
+          return customer;
+        });
+        
+        setCustomers(updatedCustomers);
+        
+        // Prepare success data
+        const successTransactionData = {
+          customerName: selectedCustomer.name,
+          amount: collectionAmount,
+          date: transactionDate,
+          transactionId: transactionId,
+        };
+        
+        setSuccessData(successTransactionData);
+        setIsProcessing(false);
+        setShowPinModal(false);
+        setShowSuccessScreen(true);
+      }, 1500);
+      
+      return true;
+    } catch (error) {
       setIsProcessing(false);
-      hideCollectionModal();
-    }, 1500);
-  }, [password, collectionAmount, customers, selectedCustomer, hideCollectionModal]);
+      return false;
+    }
+  }, [verifyPin, selectedCustomer, collectionAmount, customers]);
+
+  const handleSuccessClose = useCallback(() => {
+    setShowSuccessScreen(false);
+    setSuccessData(null);
+    setSelectedCustomer(null);
+    setCollectionAmount(0);
+  }, []);
+
+  const handleCollectionModalClose = useCallback(() => {
+    setShowCollectionModal(false);
+    setSelectedCustomer(null);
+    setCollectionAmount(0);
+  }, []);
+
+  const handlePinModalClose = useCallback(() => {
+    setShowPinModal(false);
+    // Don't reset selectedCustomer and amount here in case user wants to retry
+  }, []);
 
   const formatCurrency = (amount) => {
     return `₹${amount.toLocaleString('en-IN')}`;
@@ -248,7 +285,7 @@ const SearchScreen = () => {
           </View>
           <TouchableOpacity 
             style={styles.collectButton}
-            onPress={() => showCollectionModal(customer)}
+            onPress={() => handleCollectPress(customer)}
             activeOpacity={0.7}
           >
             <FontAwesomeIcon icon={faPlus} size={14} color="#FFFFFF" />
@@ -279,7 +316,18 @@ const SearchScreen = () => {
         </View>
       </View>
     );
-  }, [showCollectionModal]);
+  }, [handleCollectPress]);
+
+  // If success screen is visible, show it instead of the main screen
+  if (showSuccessScreen) {
+    return (
+      <SuccessTransactionScreen
+        visible={showSuccessScreen}
+        onClose={handleSuccessClose}
+        transactionData={successData}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -355,118 +403,23 @@ const SearchScreen = () => {
         )}
       </ScrollView>
 
-      {/* Collection Modal - Simplified without complex animations */}
-      <Modal
-        visible={showPasswordModal}
-        transparent
-        animationType="slide"
-        onRequestClose={hideCollectionModal}
-      >
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={styles.overlayTouchable}
-            activeOpacity={1}
-            onPress={hideCollectionModal}
-          />
-          <View style={styles.modalContainer}>
-            <View style={styles.modal}>
-              {/* Modal Header */}
-              <View style={styles.modalHeader}>
-                <TouchableOpacity 
-                  style={styles.closeButton}
-                  onPress={hideCollectionModal}
-                  activeOpacity={0.7}
-                >
-                  <FontAwesomeIcon icon={faTimes} size={18} color="#6B7280" />
-                </TouchableOpacity>
-                <Text style={styles.modalTitle}>Add Collection</Text>
-                {selectedCustomer && (
-                  <Text style={styles.modalSubtitle}>{selectedCustomer.name}</Text>
-                )}
-              </View>
+      {/* Collection Modal */}
+      <CollectionModal
+        visible={showCollectionModal}
+        onClose={handleCollectionModalClose}
+        onNext={handleCollectionNext}
+        customer={selectedCustomer}
+      />
 
-              {/* Modal Content */}
-              <View style={styles.modalContent}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Collection Amount</Text>
-                  <View style={styles.amountInputContainer}>
-                    <FontAwesomeIcon icon={faRupeeSign} size={16} color="#6B7280" />
-                    <TextInput
-                      style={styles.amountInput}
-                      placeholder="Enter amount"
-                      placeholderTextColor="#9CA3AF"
-                      value={collectionAmount}
-                      onChangeText={setCollectionAmount}
-                      keyboardType="numeric"
-                      returnKeyType="next"
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Password</Text>
-                  <View style={styles.passwordInputContainer}>
-                    <TextInput
-                      style={styles.passwordInput}
-                      placeholder="Enter password"
-                      placeholderTextColor="#9CA3AF"
-                      value={password}
-                      onChangeText={(text) => {
-                        setPassword(text);
-                        setPasswordError('');
-                      }}
-                      secureTextEntry={!showPassword}
-                      returnKeyType="done"
-                    />
-                    <TouchableOpacity
-                      style={styles.eyeButton}
-                      onPress={() => setShowPassword(!showPassword)}
-                      activeOpacity={0.7}
-                    >
-                      <FontAwesomeIcon 
-                        icon={showPassword ? faEyeSlash : faEye} 
-                        size={16} 
-                        color="#6B7280" 
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  {passwordError ? (
-                    <Text style={styles.errorText}>{passwordError}</Text>
-                  ) : null}
-                </View>
-              </View>
-
-              {/* Modal Actions */}
-              <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
-                  onPress={hideCollectionModal}
-                  disabled={isProcessing}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.confirmButton]}
-                  onPress={handleAddCollection}
-                  disabled={isProcessing}
-                  activeOpacity={0.7}
-                >
-                  {isProcessing ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <>
-                      <FontAwesomeIcon icon={faCheck} size={14} color="#FFFFFF" />
-                      <Text style={styles.confirmButtonText}>Add Collection</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      {/* PIN Modal */}
+      <PinModal
+        visible={showPinModal}
+        onClose={handlePinModalClose}
+        onConfirm={handlePinConfirm}
+        customer={selectedCustomer}
+        amount={collectionAmount}
+        isProcessing={isProcessing}
+      />
     </SafeAreaView>
   );
 };
@@ -489,7 +442,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#FFFFFF',
     fontWeight: '600',
-   fontFamily: 'DMSans-Bold',
+    fontFamily: 'DMSans-Bold',
   },
   headerCancelButton: {
     fontSize: 14,
@@ -520,7 +473,7 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     paddingVertical: 12,
     paddingLeft: 12,
-   fontFamily: 'DMSans-Medium',
+    fontFamily: 'DMSans-Medium',
   },
   clearButton: {
     padding: 4,
@@ -533,7 +486,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    marginTop:15,
+    marginTop: 15,
     fontSize: 18,
     color: '#1F2937',
     marginBottom: 16,
@@ -578,7 +531,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1F2937',
     marginBottom: 2,
-   fontFamily: 'DMSans-Bold',
+    fontFamily: 'DMSans-Bold',
   },
   customerAccount: {
     fontSize: 12,
@@ -591,14 +544,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 12,
     alignSelf: 'flex-start',
   },
   statusDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    marginRight: 4,
+    marginRight: 6,
   },
   statusText: {
     fontSize: 10,
@@ -607,12 +560,12 @@ const styles = StyleSheet.create({
   },
   collectButton: {
     backgroundColor: '#6739B7',
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    gap: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   collectButtonText: {
     color: '#FFFFFF',
@@ -630,9 +583,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   detailText: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#6B7280',
-    fontFamily: 'DMSans-Bold',
+    fontFamily: 'DMSans-Medium',
   },
   customerStats: {
     flexDirection: 'row',
@@ -642,10 +595,10 @@ const styles = StyleSheet.create({
     borderTopColor: '#F1F5F9',
   },
   statItem: {
-    alignItems: 'center',
+    flex: 1,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#6B7280',
     marginBottom: 4,
     fontFamily: 'DMSans-Medium',
@@ -653,177 +606,26 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 14,
     color: '#1F2937',
-    fontFamily: 'DMSans-Medium',
+    fontWeight: '600',
+    fontFamily: 'DMSans-Bold',
   },
   noResultsContainer: {
     alignItems: 'center',
     paddingVertical: 40,
+    paddingHorizontal: 20,
   },
   noResultsTitle: {
     fontSize: 18,
-    color: '#1F2937',
-    fontWeight: '600',
+    color: '#374151',
     marginTop: 16,
     marginBottom: 8,
-    fontFamily: 'DMSans-Medium',
+    fontFamily: 'DMSans-Bold',
   },
   noResultsSubtitle: {
     fontSize: 14,
     color: '#6B7280',
     textAlign: 'center',
     fontFamily: 'DMSans-Medium',
-  },
-
-  // Modal Styles - Simplified
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  overlayTouchable: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  },
-  modalContainer: {
-    width: '100%',
-    maxWidth: 400,
-  },
-  modal: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 16,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 16,
-  },
-  modalHeader: {
-    alignItems: 'center',
-    padding: 24,
-    position: 'relative',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F8FAFC',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 20,
-    color: '#1F2937',
-    marginBottom: 4,
-   fontFamily: 'DMSans-Bold',
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontFamily: 'DMSans-Medium',
-  },
-  modalContent: {
-    padding: 24,
-    gap: 20,
-  },
-  inputGroup: {
-    gap: 8,
-  },
-  inputLabel: {
-    fontSize: 14,
-    color: '#1F2937',
-    fontWeight: '600',
-    fontFamily: 'DMSans-Bold',
-  },
-  amountInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  amountInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1F2937',
-    paddingVertical: 12,
-    paddingLeft: 12,
-    fontFamily: 'DMSans-Medium',
-  },
-  passwordInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  passwordInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1F2937',
-    paddingVertical: 12,
-    fontFamily: 'DMSans-Medium',
-  },
-  eyeButton: {
-    padding: 8,
-  },
-  errorText: {
-    fontSize: 12,
-    color: '#EF4444',
-    marginTop: 4,
-    fontFamily: 'DMSans-Medium',
-  },
-  modalActions: {
-    flexDirection: 'row',
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  cancelButton: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  cancelButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748B',
-    fontFamily: 'DMSans-Bold',
-  },
-  confirmButton: {
-    backgroundColor: '#6739B7',
-  },
-  confirmButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    fontFamily: 'DMSans-Bold',
   },
 });
 
