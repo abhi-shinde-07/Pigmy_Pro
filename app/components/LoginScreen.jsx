@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -170,25 +171,30 @@ const CustomDialog = ({ visible, onClose, title, message, buttons, type = 'defau
   );
 };
 
-// Modern Logo Component - No Animation
+// Simple Pigmy Logo Component with larger size
 const PigmyLogo = () => (
   <View style={styles.logoContainer}>
-    <View style={styles.logoCircle}>
-      <View style={styles.logoInnerCircle}>
-        <View style={styles.letterContainer}>
-          <Text style={styles.logoLetter}>P</Text>
-        </View>
-        <View style={styles.accentDot} />
-      </View>
+    <View style={styles.logoGlow}>
+      <Image 
+        source={require('../../assets/images/PigmyPro.png')}
+        style={styles.logoImage}
+        resizeMode="contain"
+        onError={(error) => console.log('Logo image error:', error)}
+      />
     </View>
   </View>
 );
 
-// TechyVerve Logo Component
+// Simple TechyVerve Logo Component with larger size
 const TechyVerveLogo = () => (
   <View style={styles.companyLogoContainer}>
-    <View style={styles.companyLogo}>
-      <Text style={styles.companyLogoText}>T</Text>
+    <View style={styles.companyLogoGlow}>
+      <Image 
+        source={require('../../assets/images/Techy_Verve.png')}
+        style={styles.companyLogoImage}
+        resizeMode="contain"
+        onError={(error) => console.log('Company logo image error:', error)}
+      />
     </View>
   </View>
 );
@@ -207,13 +213,13 @@ const LoginScreen = () => {
     type: 'default'
   });
   
-  // Animation values (removed logoRotateAnim)
+  // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Entrance animation (removed logo rotation)
+    // Entrance animation
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -335,11 +341,10 @@ const LoginScreen = () => {
       {/* Header Section */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          {/* Logo without animation wrapper */}
+          {/* Logo without text */}
           <View style={styles.logoWrapper}>
             <PigmyLogo />
           </View>
-          <Text style={styles.appName}>Pigmy Pro</Text>
           <Text style={styles.headerSubtitle}>Welcome back! Please sign in to continue</Text>
         </View>
       </View>
@@ -455,11 +460,10 @@ const LoginScreen = () => {
               )}
             </TouchableOpacity>
 
-            {/* Footer - Company Info */}
+            {/* Footer - Company Logo Only */}
             <View style={styles.footer}>
               <TechyVerveLogo />
-              <Text style={styles.companyName}>TechyVerve</Text>
-              <Text style={styles.companyTagline}>Innovative Solutions</Text>
+              <Text style={{color:'#c6bcbcff'}}>© 2024 All Rights Reserved</Text>
             </View>
           </Animated.View>
         </ScrollView>
@@ -483,7 +487,7 @@ const styles = StyleSheet.create({
     paddingTop: 70,
     flex: 1,
     backgroundColor: '#6739B7',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   statusBar: {
     flexDirection: 'row',
@@ -498,7 +502,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   statusIcons: {
     flexDirection: 'row',
@@ -552,74 +556,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoWrapper: {
-    marginBottom: 16,
+    margin: -60 ,
   },
   logoContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  logoInnerCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 15,
-    backgroundColor: '#6739B7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  letterContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoLetter: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    fontFamily: 'DMSans-Regular',
-    textAlign: 'center',
-    lineHeight: 28,
-  },
-  accentDot: {
-    position: 'absolute',
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FFFFFF',
-    top: 8,
-    right: 8,
-    opacity: 0.9,
-  },
-  appName: {
-    color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    fontFamily: 'DMSans-Regular',
-    letterSpacing: 1,
+  logoImage: {
+    width: 300,
+    height: 300,
+    tintColor: '#FFFFFF',
   },
   headerSubtitle: {
     color: 'rgba(255, 255, 255, 0.9)',
     fontSize: 16,
     textAlign: 'center',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
     fontWeight: '400',
   },
   footer: {
@@ -630,34 +582,14 @@ const styles = StyleSheet.create({
     borderTopColor: '#E5E7EB',
   },
   companyLogoContainer: {
-    marginBottom: 8,
-  },
-  companyLogo: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: '#6739B7',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: -10,
   },
-  companyLogoText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    fontFamily: 'DMSans-Regular',
-  },
-  companyName: {
-    color: '#6B7280',
-    marginBottom: 4,
-    fontFamily: 'DMSans-Regular',
-    fontSize: 16,
-    fontWeight: '400',
-  },
-  companyTagline: {
-    color: '#9CA3AF',
-    fontSize: 12,
-    fontFamily: 'DMSans-Regular',
-    fontWeight: '400',
+  companyLogoImage: {
+    width: 100,
+    height: 100,
+    tintColor: '#6739B7',
   },
   keyboardView: {
     flex: 1,
@@ -685,7 +617,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151',
     marginBottom: 8,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -718,7 +650,7 @@ const styles = StyleSheet.create({
     paddingRight: 16,
     fontSize: 16,
     color: '#1F2937',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
     fontWeight: '500',
   },
   eyeIcon: {
@@ -730,7 +662,7 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     fontSize: 14,
     marginTop: 6,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
     fontWeight: '500',
   },
   forgotPassword: {
@@ -741,7 +673,7 @@ const styles = StyleSheet.create({
     color: '#6739B7',
     fontSize: 14,
     fontWeight: '600',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   loginButton: {
     backgroundColor: '#6739B7',
@@ -772,7 +704,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     letterSpacing: 0.5,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   
   // Dialog Styles
@@ -818,7 +750,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1F2937',
     textAlign: 'center',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   dialogBody: {
     paddingHorizontal: 24,
@@ -829,7 +761,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 24,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   dialogActions: {
     flexDirection: 'row',
@@ -864,7 +796,7 @@ const styles = StyleSheet.create({
   dialogButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Bold',
   },
   dialogButtonTextDefault: {
     color: '#FFFFFF',
