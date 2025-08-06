@@ -168,7 +168,7 @@ const SplashScreen = ({ onAnimationComplete }) => {
             ]}
           >
             <Image 
-              source={require('../../assets/images/PigmyPro.png')}
+              source={require('../../../assets/images/PigmyPro.png')}
               style={styles.logoImage}
               resizeMode="contain"
               onError={(error) => console.log('Logo image error:', error)}
@@ -209,7 +209,7 @@ const SplashScreen = ({ onAnimationComplete }) => {
         <Text style={styles.poweredBy}>Powered by</Text>
         <View style={styles.brandContainer}>
           <Image 
-            source={require('../../assets/images/Techy_Verve.png')}
+            source={require('../../../assets/images/Techy_Verve.png')}
             style={styles.companyLogo}
             resizeMode="contain"
             onError={(error) => console.log('Company logo error:', error)}

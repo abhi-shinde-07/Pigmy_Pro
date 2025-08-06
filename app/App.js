@@ -1,21 +1,19 @@
 import * as Font from 'expo-font';
-import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { AppState, PanResponder, View } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthContext, AuthProvider } from './context/AuthContext';
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import AlertScreen from './components/AlertScreen';
 import BottomNavBar from './components/BottomNavBar';
-import HelpDeskScreen from './components/HelpDeskScreen'; // ✅ NEW
-import HistoryScreen from './components/HistoryScreen';
-import HomeScreen from './components/HomeScreen';
-import LoginScreen from './components/LoginScreen';
-import PinScreen from './components/PinScreen';
-import ProfileScreen from './components/ProfileScreen';
-import SearchScreen from './components/SearchScreen';
-import SplashScreen from './components/SplashScreen';
+import AlertScreen from './Screens/AlertScreen/AlertScreen';
+import HelpDeskScreen from './Screens/HelpDeskScreen/HelpDeskScreen';
+import HistoryScreen from './Screens/HistoryScreen/HistoryScreen';
+import HomeScreen from './Screens/HomeScreen/HomeScreen';
+import LoginScreen from './Screens/LoginScreen/LoginScreen';
+import ProfileScreen from './Screens/ProfileScreen/ProfileScreen';
+import SearchScreen from './Screens/SearchScreen/SearchScreen';
+import SplashScreen from './Screens/SplashScreen/SplashScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -25,7 +23,7 @@ export const FONTS = {
 };
 
 const MainApp = () => {
-  const { user, pinRequired, resetInactivityTimer } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const [showSplash, setShowSplash] = useState(true);
   const [appReady, setAppReady] = useState(false);
   const [fontsLoaded, setFontsLoaded] = useState(false);
@@ -45,25 +43,6 @@ const MainApp = () => {
   }, []);
 
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') resetInactivityTimer?.();
-    });
-    return () => sub.remove();
-  }, [resetInactivityTimer]);
-
-  const handleUserInteraction = useCallback(() => {
-    resetInactivityTimer?.();
-  }, [resetInactivityTimer]);
-
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => {
-      handleUserInteraction();
-      return false;
-    },
-    onMoveShouldSetPanResponder: () => false,
-  });
-
-  useEffect(() => {
     if (!showSplash && !appReady && fontsLoaded) {
       setTimeout(() => setAppReady(true), 300);
     }
@@ -73,31 +52,27 @@ const MainApp = () => {
     return <SplashScreen onAnimationComplete={() => setShowSplash(false)} />;
   }
 
-  if (pinRequired && user) return <PinScreen />;
-
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1 }} {...panResponder.panHandlers}>
-        {!user ? (
-          <LoginScreen />
-        ) : (
-          <Tab.Navigator
-            tabBar={(props) => <BottomNavBar {...props} />}
-            screenOptions={{ headerShown: false }}
-          >
-            <Tab.Screen name="Home" component={HomeScreen} />
-            <Tab.Screen name="Alerts" component={AlertScreen} />
-            <Tab.Screen name="Search" component={SearchScreen} />
-            <Tab.Screen name="History" component={HistoryScreen} />
-            <Tab.Screen name="Profile" component={ProfileScreen} />
-            <Tab.Screen
-              name="HelpDesk"
-              component={HelpDeskScreen}
-              options={{ tabBarButton: () => null }} // ✅ Hide from tab bar
-            />
-          </Tab.Navigator>
-        )}
-      </View>
+      {!user ? (
+        <LoginScreen />
+      ) : (
+        <Tab.Navigator
+          tabBar={(props) => <BottomNavBar {...props} />}
+          screenOptions={{ headerShown: false }}
+        >
+          <Tab.Screen name="Home" component={HomeScreen} />
+          <Tab.Screen name="Alerts" component={AlertScreen} />
+          <Tab.Screen name="Search" component={SearchScreen} />
+          <Tab.Screen name="History" component={HistoryScreen} />
+          <Tab.Screen name="Profile" component={ProfileScreen} />
+          <Tab.Screen
+            name="HelpDesk"
+            component={HelpDeskScreen}
+            options={{ tabBarButton: () => null }}
+          />
+        </Tab.Navigator>
+      )}
     </SafeAreaProvider>
   );
 };

@@ -54,7 +54,7 @@ const HelpDeskScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <Image
-          source={require('../../assets/images/HelpDesk.png')}
+          source={require('../../../assets/images/HelpDesk.png')}
           style={styles.headerBackgroundImage}
           resizeMode="stretch"
         />
