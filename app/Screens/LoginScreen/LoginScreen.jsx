@@ -126,7 +126,7 @@ const LoginScreen = () => {
       if (!result.success) {
         shakeForm();
         showDialog({
-          title: 'Login Failed',
+          title: 'Access Denied',
           message: result.error,
           type: 'error',
           buttons: [

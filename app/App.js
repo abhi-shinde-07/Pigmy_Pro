@@ -79,6 +79,7 @@ const MainApp = () => {
 
 export default function App() {
   return (
+    
     <AuthProvider>
       <MainApp />
     </AuthProvider>

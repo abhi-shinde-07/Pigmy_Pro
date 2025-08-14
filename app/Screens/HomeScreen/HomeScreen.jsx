@@ -24,7 +24,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import PinModal from '../../components/PinModal'; // Import PinModal
+import PinModal from '../../components/PinModal';
 import { AuthContext } from '../../context/AuthContext';
 import HomeCSS from './styles/HomeCSS';
 
@@ -50,7 +50,6 @@ const HomeScreen = () => {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   
-  // Pin Modal states
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinProcessing, setPinProcessing] = useState(false);
 
@@ -58,31 +57,17 @@ const HomeScreen = () => {
     try {
       setError(null);
       setLoading(true);
-      
+
       const result = await fetchDashboardData();
-      
+
       if (!result) {
-        throw new Error('Failed to fetch dashboard data');
+        // Instead of throwing, we set default empty dashboard to prevent crash
+        setError('Service is currently unavailable. Please try again later.');
+        return;
       }
-    } catch (error) {
-      console.error('Dashboard fetch error:', error);
-      setError(error.message);
-      
-      // Show error alert
-      Alert.alert(
-        'Error',
-        'Failed to load dashboard data. Please try again.',
-        [
-          {
-            text: 'Retry',
-            onPress: () => loadDashboardData(),
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-        ]
-      );
+    } catch (err) {
+      console.error('Dashboard fetch error:', err);
+      setError('Service is currently unavailable. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -102,7 +87,6 @@ const HomeScreen = () => {
     setRefreshing(false);
   }, [loadDashboardData]);
 
-  // Get data directly from backend response - no calculations needed
   const getStatsData = () => {
     if (!dashboardData) {
       return {
@@ -113,7 +97,6 @@ const HomeScreen = () => {
         totalCollected: 0,
       };
     }
-
     return {
       totalCustomers: dashboardData.totalCustomers || 0,
       collectedCustomers: dashboardData.collectedCustomers || 0,
@@ -123,26 +106,19 @@ const HomeScreen = () => {
     };
   };
 
-  // Handle PIN confirmation for collection submission
   const handlePinConfirm = useCallback(async (pin) => {
     setPinProcessing(true);
-    
     try {
       const response = await makeAuthenticatedRequest(
         'http://10.178.8.1:7001/api/v1/agent/submit-collection',
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            password: pin
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pin }),
         }
       );
 
       if (!response) {
-        // User was logged out due to unauthorized request (401 from token expiry)
         setPinProcessing(false);
         setShowPinModal(false);
         return false;
@@ -151,133 +127,62 @@ const HomeScreen = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        // Success - close modal and refresh data
         setShowPinModal(false);
         setPinProcessing(false);
-        
-        // Refresh dashboard data to reflect the submission
         await loadDashboardData();
-        
-        Alert.alert(
-          'Success', 
-          result.message || 'Collection submitted successfully!',
-          [{ text: 'OK', style: 'default' }],
-          { userInterfaceStyle: 'light' }
-        );
-        
+        Alert.alert('Success', result.message || 'Collection submitted successfully!');
         return true;
       } else {
-        // API returned error
         setPinProcessing(false);
-        
-        // Use the exact error message from backend
         const errorMessage = result.message || 'Failed to submit collection';
-        if (response.status === 401) {
-          return false; // This will show the error in PIN modal and keep it open
-        }
-        
-        // For other errors (400, 404, 500), close modal and show alert
+        if (response.status === 401) return false;
         setShowPinModal(false);
-        Alert.alert(
-          'Error', 
-          errorMessage,
-          [{ text: 'OK', style: 'default' }],
-          { userInterfaceStyle: 'light' }
-        );
+        Alert.alert('Error', errorMessage);
         return false;
       }
-    } catch (error) {
-      console.error('Submit collection error:', error);
+    } catch (err) {
+      console.error('Submit collection error:', err);
       setPinProcessing(false);
       setShowPinModal(false);
-      
-      // Handle network errors
-      let errorMessage = 'Network error. Please check your internet connection and try again.';
-      if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
-        errorMessage = 'Network error. Please check your internet connection and try again.';
-      } else {
-        errorMessage = 'An unexpected error occurred. Please try again.';
-      }
-      
-      Alert.alert(
-        'Error', 
-        errorMessage,
-        [{ text: 'OK', style: 'default' }],
-        { userInterfaceStyle: 'light' }
-      );
+      Alert.alert('Error', 'Network error. Please check your internet connection.');
       return false;
     }
   }, [makeAuthenticatedRequest, loadDashboardData]);
 
-  // Custom confirmation dialog component
   const showConfirmationDialog = () => {
     const statsData = getStatsData();
     Alert.alert(
       'Submit Collection',
-      `Are you sure you want to submit today's collection?\n\nAmount: ₹${statsData.totalCollected.toLocaleString('en-IN')}\nCustomers: ${statsData.collectedCustomers}\n\nThis action cannot be undone.`,
+      `Are you sure you want to submit today's collection?\n\nAmount: ₹${statsData.totalCollected.toLocaleString('en-IN')}\nCustomers: ${statsData.collectedCustomers}`,
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Submit',
-          style: 'default',
-          onPress: () => {
-            setShowPinModal(true);
-          },
-        },
-      ],
-      {
-        cancelable: true,
-        userInterfaceStyle: 'light'
-      }
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Submit', onPress: () => setShowPinModal(true) }
+      ]
     );
   };
 
-  // Handle collection submission button press
-  const handleSubmitCollection = useCallback(async () => {
+  const handleSubmitCollection = useCallback(() => {
     if (submitting || pinProcessing) return;
-
-    // Check if collection is already submitted
     if (dashboardData?.currentCollection?.submitted) {
-      Alert.alert(
-        'Already Submitted',
-        'Collection has already been submitted today.',
-        [{ text: 'OK', style: 'default' }],
-        { userInterfaceStyle: 'light' }
-      );
+      Alert.alert('Already Submitted', 'Collection has already been submitted today.');
       return;
     }
-
-    // Check if there are any collections to submit
     const statsData = getStatsData();
     if (statsData.collectedCustomers === 0) {
-      Alert.alert(
-        'No Collections',
-        'No collections to submit. Please collect from customers first.',
-        [{ text: 'OK', style: 'default' }],
-        { userInterfaceStyle: 'light' }
-      );
+      Alert.alert('No Collections', 'No collections to submit.');
       return;
     }
-
     showConfirmationDialog();
-  }, [submitting, pinProcessing, dashboardData?.currentCollection?.submitted, showConfirmationDialog]);
+  }, [submitting, pinProcessing, dashboardData]);
 
-  // Handle PIN modal close
-  const handlePinModalClose = useCallback(() => {
+  const handlePinModalClose = () => {
     setShowPinModal(false);
     setPinProcessing(false);
-  }, []);
+  };
 
-  const formatCurrency = useCallback((amount) => {
-    return `₹${amount.toLocaleString('en-IN')}`;
-  }, []);
-
+  const formatCurrency = (amount) => `₹${amount.toLocaleString('en-IN')}`;
   const statsData = getStatsData();
 
-  // Loading state
   if (loading || authLoading) {
     return (
       <SafeAreaView style={HomeCSS.container}>
@@ -289,16 +194,12 @@ const HomeScreen = () => {
     );
   }
 
-  // Error state
   if (error && !dashboardData) {
     return (
       <SafeAreaView style={HomeCSS.container}>
         <View style={HomeCSS.loadingContainer}>
-          <Text style={HomeCSS.errorText}>Error loading dashboard</Text>
-          <TouchableOpacity 
-            style={HomeCSS.retryButton} 
-            onPress={loadDashboardData}
-          >
+          <Text style={HomeCSS.errorText}>{error}</Text>
+          <TouchableOpacity style={HomeCSS.retryButton} onPress={loadDashboardData}>
             <Text style={HomeCSS.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -306,7 +207,6 @@ const HomeScreen = () => {
     );
   }
 
-  // No user data
   if (!user) {
     return (
       <SafeAreaView style={HomeCSS.container}>
@@ -321,42 +221,28 @@ const HomeScreen = () => {
     <SafeAreaView style={HomeCSS.container}>
       <StatusBar barStyle="light-content" backgroundColor="#6739B7" />
       
-      {/* Header */}
       <View style={HomeCSS.header}>
-        {/* Header Background Image */}
         <Image 
           source={require('../../../assets/images/HomeScreen.png')} 
           style={HomeCSS.headerBackgroundImage}
           resizeMode="stretch"
         />
-        
-        {/* Header Content Overlay */}
         <View style={HomeCSS.headerOverlay}>
-          {/* Top Corner Icons */}
           <View style={HomeCSS.topCornerIcons}>
-            <TouchableOpacity 
-              style={HomeCSS.profileIcon} 
-              onPress={() => navigation.navigate('Profile')}
-            >
+            <TouchableOpacity style={HomeCSS.profileIcon} onPress={() => navigation.navigate('Profile')}>
               <FontAwesomeIcon icon={faUser} size={20} color="#FFFFFF" />
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={HomeCSS.helpIcon} 
-              onPress={() => navigation.navigate('HelpDesk')}
-            >
+            <TouchableOpacity style={HomeCSS.helpIcon} onPress={() => navigation.navigate('HelpDesk')}>
               <FontAwesomeIcon icon={faQuestionCircle} size={20} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-          
-          {/* Centered Bank Info Section - Updated to use new structure */}
           <View style={HomeCSS.bankInfoSection}>
             <BankLogo />
             <Text style={HomeCSS.bankName}>
               {dashboardData?.patsansthaInfo?.fullname || user?.patsansthaName || 'Bank Name'}
             </Text>
             <Text style={HomeCSS.bankCode}>
-              {dashboardData?.patsansthaInfo?.patname || `ID: ${user?.patsansthaId}` || 'Branch Code'}
+              {dashboardData?.patsansthaInfo?.patname || `ID: ${user?.patsansthaId}`}
             </Text>
           </View>
         </View>
@@ -365,23 +251,15 @@ const HomeScreen = () => {
       <ScrollView 
         style={HomeCSS.scrollView}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {/* Today's Collection Card */}
         <View style={HomeCSS.collectionCard}>
           <View style={HomeCSS.collectionHeader}>
             <FontAwesomeIcon icon={faCalendarDay} size={20} color="#6739B7" />
             <Text style={HomeCSS.collectionHeaderText}>Today's Collection</Text>
           </View>
-          <Text style={HomeCSS.collectionAmount}>
-            {formatCurrency(statsData.totalCollected)}
-          </Text>
-          <Text style={HomeCSS.collectionSubtext}>
-            From {statsData.collectedCustomers} customers
-          </Text>
-          
+          <Text style={HomeCSS.collectionAmount}>{formatCurrency(statsData.totalCollected)}</Text>
+          <Text style={HomeCSS.collectionSubtext}>From {statsData.collectedCustomers} customers</Text>
           <View style={HomeCSS.collectionActions}>
             <TouchableOpacity 
               style={[
@@ -406,10 +284,8 @@ const HomeScreen = () => {
           </View>
         </View>
 
-        {/* Dashboard Stats */}
         <View style={HomeCSS.statsContainer}>
           <View style={HomeCSS.statsRow}>
-            {/* Total Customers */}
             <View style={HomeCSS.statCard}>
               <View style={[HomeCSS.statIcon, { backgroundColor: '#EBF8FF' }]}>
                 <FontAwesomeIcon icon={faUsers} size={20} color="#3182CE" />
@@ -417,8 +293,6 @@ const HomeScreen = () => {
               <Text style={HomeCSS.statNumber}>{statsData.totalCustomers}</Text>
               <Text style={HomeCSS.statLabel}>Total Customers</Text>
             </View>
-
-            {/* Remaining Customers */}
             <View style={HomeCSS.statCard}>
               <View style={[HomeCSS.statIcon, { backgroundColor: '#FEF5E7' }]}>
                 <FontAwesomeIcon icon={faClockRotateLeft} size={20} color="#F6AD55" />
@@ -427,9 +301,7 @@ const HomeScreen = () => {
               <Text style={HomeCSS.statLabel}>Remaining</Text>
             </View>
           </View>
-
           <View style={HomeCSS.statsRow}>
-            {/* Collected Customers */}
             <View style={HomeCSS.statCard}>
               <View style={[HomeCSS.statIcon, { backgroundColor: '#F0FDF4' }]}>
                 <FontAwesomeIcon icon={faCheckCircle} size={20} color="#22C55E" />
@@ -437,8 +309,6 @@ const HomeScreen = () => {
               <Text style={HomeCSS.statNumber}>{statsData.collectedCustomers}</Text>
               <Text style={HomeCSS.statLabel}>Collected</Text>
             </View>
-
-            {/* Collection Rate */}
             <View style={HomeCSS.statCard}>
               <View style={[HomeCSS.statIcon, { backgroundColor: '#F3E8FF' }]}>
                 <FontAwesomeIcon icon={faChartLine} size={20} color="#8B5CF6" />
@@ -448,10 +318,8 @@ const HomeScreen = () => {
             </View>
           </View>
         </View>
-
       </ScrollView>
 
-      {/* PIN Modal for Collection Submission */}
       <PinModal
         visible={showPinModal}
         onClose={handlePinModalClose}

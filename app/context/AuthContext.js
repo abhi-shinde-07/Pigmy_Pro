@@ -1,22 +1,31 @@
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useEffect, useRef, useState } from 'react';
-import { Alert, AppState } from 'react-native';
+import { AppState, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export const AuthContext = createContext();
 
-// API Configuration
 const API_BASE_URL = 'http://10.178.8.1:7001/api/v1'; 
 const LOGIN_ENDPOINT = '/agent/login';
 const LOGOUT_ENDPOINT = '/agent/logout';
 const DASHBOARD_ENDPOINT = '/agent/dashboard';
 
 export const AuthProvider = ({ children }) => {
-  const SESSION_TIMEOUT = 1000 * 60 * 60 * 12; // 12 hours
+  const SESSION_TIMEOUT = 1000 * 60 * 60 * 12;
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const sessionTimer = useRef(null);
   const appState = useRef(AppState.currentState);
+
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogData, setDialogData] = useState({ title: '', message: '', type: 'info', buttonText: 'OK' });
+
+  const showDialog = ({ title, message, type = 'info', buttonText = 'OK' }) => {
+    setDialogData({ title, message, type, buttonText });
+    setDialogVisible(true);
+  };
+
+  const closeDialog = () => setDialogVisible(false);
 
   const resetSessionTimer = () => {
     if (sessionTimer.current) clearTimeout(sessionTimer.current);
@@ -27,91 +36,53 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (agentno, password) => {
     setIsLoading(true);
-    
     try {
       const response = await fetch(`${API_BASE_URL}${LOGIN_ENDPOINT}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          agentno: agentno.trim(),
-          password: password.trim(),
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentno: agentno.trim(), password: password.trim() }),
       });
 
       const data = await response.json();
-
       if (!response.ok) {
-        // Handle different error status codes
         let errorMessage = 'Login failed. Please try again.';
-        
         switch (response.status) {
-          case 400:
-            errorMessage = 'Agent number and password are required.';
-            break;
-          case 401:
-            errorMessage = 'Invalid credentials. Please check your agent number and password.';
-            break;
-          case 403:
-            errorMessage = data.message || 'Your account is inactive. Please contact administrator.';
-            break;
-          case 404:
-            errorMessage = 'Agent not found. Please check your agent number.';
-            break;
-          case 500:
-            errorMessage = 'Server error. Please try again later.';
-            break;
-          default:
-            errorMessage = data.message || 'An unexpected error occurred.';
+          case 400: errorMessage = 'Agent number and password are required.'; break;
+          case 401: errorMessage = 'Invalid credentials.'; break;
+          case 403: errorMessage = data.message || 'Your account is inactive.'; break;
+          case 404: errorMessage = 'Agent not found.'; break;
+          case 500: errorMessage = 'Server error.'; break;
+          default:  errorMessage = data.message || 'Unexpected error.';
         }
-        
         return { success: false, error: errorMessage };
       }
 
-      // Successful login - Updated to match new backend response
       const { agent, accessToken } = data.data;
-      
       const userData = {
-        _id: agent._id, // Added agent ID from backend
+        _id: agent._id,
         agentname: agent.agentname,
         agentno: agent.agentno,
         mobileNumber: agent.mobileNumber,
         patsansthaName: agent.patsansthaName,
         patsansthaId: agent.patsansthaId,
-        accessToken: accessToken,
-        loginTime: Date.now(), // Track login time
+        accessToken,
+        loginTime: Date.now(),
       };
 
       setUser(userData);
-      
-      // Store user data and session info securely
       await SecureStore.setItemAsync('session_user', JSON.stringify(userData));
       await SecureStore.setItemAsync('session_timestamp', Date.now().toString());
       await SecureStore.setItemAsync('access_token', accessToken);
-      
-      resetSessionTimer();
-      
-      // Fetch initial dashboard data after successful login
-      await fetchDashboardData();
-      
-      return { success: true, user: userData };
 
+      resetSessionTimer();
+      await fetchDashboardData();
+
+      return { success: true, user: userData };
     } catch (error) {
-      console.error('Login error:', error);
-      
-      // Handle network errors
       if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
-        return { 
-          success: false, 
-          error: 'Network error. Please check your internet connection and try again.' 
-        };
+        return { success: false, error: 'Network error. Please check your connection.' };
       }
-      
-      return { 
-        success: false, 
-        error: 'An unexpected error occurred. Please try again.' 
-      };
+      return { success: false, error: 'An unexpected error occurred.' };
     } finally {
       setIsLoading(false);
     }
@@ -119,41 +90,29 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async (message) => {
     try {
-      // Get the access token for the logout API call
       const accessToken = await SecureStore.getItemAsync('access_token');
-      
-      // Call logout API if token exists
       if (accessToken) {
         try {
-          const response = await fetch(`${API_BASE_URL}${LOGOUT_ENDPOINT}`, {
+          await fetch(`${API_BASE_URL}${LOGOUT_ENDPOINT}`, {
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
           });
-
-          if (!response.ok) {
-            console.warn('Logout API call failed, but continuing with local logout');
-          }
-        } catch (apiError) {
-          console.warn('Logout API error:', apiError);
-          // Continue with local logout even if API call fails
-        }
+        } catch {}
       }
-      
-      // Clear local state and storage
       setUser(null);
       setDashboardData(null);
       clearTimeout(sessionTimer.current);
-      
-      // Clear all stored session data
       await SecureStore.deleteItemAsync('session_user');
       await SecureStore.deleteItemAsync('session_timestamp');
       await SecureStore.deleteItemAsync('access_token');
-      
+
       if (message) {
-        Alert.alert('Logged Out', message);
+        showDialog({
+          title: 'Session Ended',
+          message,
+          type: message.includes('expired') ? 'warning' : 'info',
+          buttonText: 'Understood',
+        });
       }
     } catch (error) {
       console.error('Logout error:', error);
@@ -168,17 +127,12 @@ export const AuthProvider = ({ children }) => {
 
       if (storedUser && timestamp && accessToken) {
         const elapsed = Date.now() - parseInt(timestamp);
-        
         if (elapsed < SESSION_TIMEOUT) {
           const userData = JSON.parse(storedUser);
-          
-          // Verify token is still valid by making a test API call
           const isTokenValid = await verifyToken(accessToken);
-          
           if (isTokenValid) {
             setUser(userData);
             resetSessionTimer();
-            // Load dashboard data for existing session
             await fetchDashboardData();
           } else {
             await logout('Session expired. Please login again.');
@@ -188,8 +142,6 @@ export const AuthProvider = ({ children }) => {
         }
       }
     } catch (error) {
-      console.error('Session load error:', error);
-      // Clear corrupted session data
       await logout();
     }
   };
@@ -198,15 +150,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE_URL}${DASHBOARD_ENDPOINT}`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
-      
       return response.ok;
-    } catch (error) {
-      console.error('Token verification error:', error);
+    } catch {
       return false;
     }
   };
@@ -214,110 +161,70 @@ export const AuthProvider = ({ children }) => {
   const getAuthHeaders = async () => {
     try {
       const accessToken = await SecureStore.getItemAsync('access_token');
-      return {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      };
-    } catch (error) {
-      console.error('Error getting auth headers:', error);
-      return {
-        'Content-Type': 'application/json',
-      };
+      return { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
+    } catch {
+      return { 'Content-Type': 'application/json' };
     }
   };
 
   const makeAuthenticatedRequest = async (url, options = {}) => {
     try {
       const headers = await getAuthHeaders();
-      
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          ...headers,
-          ...options.headers,
-        },
-      });
+      const response = await fetch(url, { ...options, headers: { ...headers, ...options.headers } });
 
-      // Enhanced 401 handling - Be more specific about when to logout
       if (response.status === 401) {
-        // Don't logout on collection-related 401s (wrong password scenarios)
-        const isCollectionEndpoint = url.includes('/submit-collection') || 
-                                   url.includes('/collection/') ||
-                                   url.includes('/add-collection');
-        
-        if (!isCollectionEndpoint) {
+        if (!url.includes('/submit-collection') && !url.includes('/collection/') && !url.includes('/add-collection')) {
           await logout('Session expired. Please login again.');
           return null;
         }
       }
-
-      // Handle 403 Forbidden (account inactive)
       if (response.status === 403) {
-        await logout('Your account has been deactivated. Please contact administrator.');
+        await logout('Your account has been deactivated.');
         return null;
       }
-
       return response;
     } catch (error) {
       console.error('Authenticated request error:', error);
-      throw error;
-    }
-  };
-
-  // Fetch dashboard data function - Enhanced error handling
-  const fetchDashboardData = async () => {
-    try {
-      const response = await makeAuthenticatedRequest(`${API_BASE_URL}${DASHBOARD_ENDPOINT}`, {
-        method: 'GET',
-      });
-
-      if (!response) {
-        // User was logged out due to unauthorized request
-        return null;
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `API Error: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success && result.data) {
-        setDashboardData(result.data);
-        return result.data;
-      } else {
-        throw new Error(result.message || 'Failed to fetch dashboard data');
-      }
-    } catch (error) {
-      console.error('Dashboard fetch error:', error);
       return null;
     }
   };
 
-  // Enhanced refresh dashboard data function
+  const fetchDashboardData = async () => {
+    try {
+      const response = await makeAuthenticatedRequest(`${API_BASE_URL}${DASHBOARD_ENDPOINT}`, { method: 'GET' });
+      if (!response) return null;
+      if (!response.ok) throw new Error(`API Error: ${response.status}`);
+      const result = await response.json();
+      if (result.success && result.data) {
+        setDashboardData(result.data);
+        return result.data;
+      }
+      throw new Error(result.message || 'Failed to fetch dashboard data');
+    } catch {
+      return null;
+    }
+  };
+
   const refreshDashboardData = async () => {
     if (!user) return null;
     return await fetchDashboardData();
   };
 
-  // Get user profile data function - Enhanced with more data
   const getUserProfileData = () => {
     if (!user) return null;
-
     return {
       agentInfo: {
         _id: user._id,
         agentname: user.agentname,
         agentno: user.agentno,
         mobileNumber: user.mobileNumber,
-        status: dashboardData?.agentInfo?.status || 'active',
+        status: dashboardData?.agentInfo?.status || 'unknown',
         loginTime: user.loginTime,
       },
       patsansthaInfo: {
-        fullname: user.patsansthaName || dashboardData?.patsansthaInfo?.fullname,
+        fullname: user.patsansthaName || dashboardData?.patsansthaInfo?.fullname || '',
         patsansthaId: user.patsansthaId,
-        patname: dashboardData?.patsansthaInfo?.patname || null,
+        patname: dashboardData?.patsansthaInfo?.patname || '',
       },
       collectionInfo: {
         hasDataToWork: dashboardData?.hasDataToWork || false,
@@ -328,15 +235,12 @@ export const AuthProvider = ({ children }) => {
     };
   };
 
-  // Check if agent has active collection
   const hasActiveCollection = () => {
     return dashboardData?.hasDataToWork === true && dashboardData?.currentCollection && !dashboardData?.currentCollection?.submitted;
   };
 
-  // Get collection summary
   const getCollectionSummary = () => {
     if (!dashboardData?.collectionStatus) return null;
-    
     return {
       totalTransactions: dashboardData.collectionStatus.totalTransactions || 0,
       totalCollected: dashboardData.collectionStatus.totalCollected || 0,
@@ -347,11 +251,9 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     loadSession();
-
     const subscription = AppState.addEventListener('change', (nextState) => {
       appState.current = nextState;
     });
-
     return () => {
       subscription.remove();
       clearTimeout(sessionTimer.current);
@@ -361,33 +263,48 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider
       value={{
-        // Core auth state
         user,
         isLoading,
         dashboardData,
-        
-        // Auth functions
         login,
         logout,
         resetSessionTimer,
-        
-        // API helpers
         getAuthHeaders,
         makeAuthenticatedRequest,
-        
-        // Data functions
         fetchDashboardData,
         refreshDashboardData,
         getUserProfileData,
-        
-        // Collection helpers
         hasActiveCollection,
         getCollectionSummary,
       }}
     >
       {children}
+
+      {/* Dialog */}
+      <Modal transparent visible={dialogVisible} animationType="fade" onRequestClose={closeDialog}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalBox, dialogData.type === 'warning' ? styles.warningBorder : styles.infoBorder]}>
+            <Text style={styles.modalTitle}>{dialogData.title}</Text>
+            <Text style={styles.modalMessage}>{dialogData.message}</Text>
+            <TouchableOpacity style={styles.modalButton} onPress={closeDialog}>
+              <Text style={styles.modalButtonText}>{dialogData.buttonText}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </AuthContext.Provider>
   );
 };
+
+const styles = StyleSheet.create({
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  modalBox: { width: '85%', backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1 },
+  warningBorder: { borderColor: '#ff9800' },
+  infoBorder: { borderColor: '#2196f3' },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 10 },
+  modalMessage: { fontSize: 16, color: '#333', marginBottom: 20 },
+  modalButton: { backgroundColor: '#2196f3', borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
+  modalButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+});
 
 export default AuthProvider;
