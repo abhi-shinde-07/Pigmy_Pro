@@ -1,16 +1,16 @@
 import {
-    faEye,
-    faEyeSlash,
-    faLock,
-    faUser,
+  faEye,
+  faEyeSlash,
+  faLock,
+  faUser,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
-    ActivityIndicator,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { formStyles as styles } from '../styles/LoginScreenStyles';
 
@@ -29,7 +29,7 @@ const LoginForm = ({
     <>
       {/* Agent Number Input */}
       <View style={styles.inputWrapper}>
-        <Text style={styles.inputLabel}>Agent Number</Text>
+        <Text style={styles.inputLabel}>Agent ID</Text>
         <View style={[styles.inputContainer, errors.username && styles.inputContainerError]}>
           <View style={styles.inputIconContainer}>
             <FontAwesomeIcon icon={faUser} size={18} color="#6B7280" />
@@ -44,7 +44,6 @@ const LoginForm = ({
             autoComplete="username"
             autoCorrect={false}
             editable={!isLoading}
-            keyboardType="numeric" // Since agent numbers are typically numeric
           />
         </View>
         {errors.username && (

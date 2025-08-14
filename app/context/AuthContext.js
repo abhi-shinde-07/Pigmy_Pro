@@ -5,7 +5,7 @@ import { Alert, AppState } from 'react-native';
 export const AuthContext = createContext();
 
 // API Configuration
-const API_BASE_URL = 'http://10.79.49.1:7001/api/v1'; 
+const API_BASE_URL = 'http://10.178.8.1:7001/api/v1'; 
 const LOGIN_ENDPOINT = '/agent/login';
 const LOGOUT_ENDPOINT = '/agent/logout';
 const DASHBOARD_ENDPOINT = '/agent/dashboard';
@@ -54,7 +54,10 @@ export const AuthProvider = ({ children }) => {
             errorMessage = 'Invalid credentials. Please check your agent number and password.';
             break;
           case 403:
-            errorMessage = 'Your account is inactive. Please contact administrator.';
+            errorMessage = data.message || 'Your account is inactive. Please contact administrator.';
+            break;
+          case 404:
+            errorMessage = 'Agent not found. Please check your agent number.';
             break;
           case 500:
             errorMessage = 'Server error. Please try again later.';
@@ -66,16 +69,18 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: errorMessage };
       }
 
-      // Successful login
+      // Successful login - Updated to match new backend response
       const { agent, accessToken } = data.data;
       
       const userData = {
+        _id: agent._id, // Added agent ID from backend
         agentname: agent.agentname,
         agentno: agent.agentno,
         mobileNumber: agent.mobileNumber,
         patsansthaName: agent.patsansthaName,
         patsansthaId: agent.patsansthaId,
         accessToken: accessToken,
+        loginTime: Date.now(), // Track login time
       };
 
       setUser(userData);
@@ -190,21 +195,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   const verifyToken = async (token) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}${DASHBOARD_ENDPOINT}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    return response.ok;
-  } catch (error) {
-    console.error('Token verification error:', error);
-    return false;
-  }
-};
+    try {
+      const response = await fetch(`${API_BASE_URL}${DASHBOARD_ENDPOINT}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      return response.ok;
+    } catch (error) {
+      console.error('Token verification error:', error);
+      return false;
+    }
+  };
 
   const getAuthHeaders = async () => {
     try {
@@ -233,10 +238,22 @@ export const AuthProvider = ({ children }) => {
         },
       });
 
-      // Only logout on 401 if it's NOT a submit-collection request
-      // submit-collection 401 means wrong password, not session expiry
-      if (response.status === 401 && !url.includes('/submit-collection') && !url.includes('/collection/')) {
-        await logout('Session expired. Please login again.');
+      // Enhanced 401 handling - Be more specific about when to logout
+      if (response.status === 401) {
+        // Don't logout on collection-related 401s (wrong password scenarios)
+        const isCollectionEndpoint = url.includes('/submit-collection') || 
+                                   url.includes('/collection/') ||
+                                   url.includes('/add-collection');
+        
+        if (!isCollectionEndpoint) {
+          await logout('Session expired. Please login again.');
+          return null;
+        }
+      }
+
+      // Handle 403 Forbidden (account inactive)
+      if (response.status === 403) {
+        await logout('Your account has been deactivated. Please contact administrator.');
         return null;
       }
 
@@ -247,7 +264,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Fetch dashboard data function
+  // Fetch dashboard data function - Enhanced error handling
   const fetchDashboardData = async () => {
     try {
       const response = await makeAuthenticatedRequest(`${API_BASE_URL}${DASHBOARD_ENDPOINT}`, {
@@ -260,7 +277,8 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `API Error: ${response.status}`);
       }
 
       const result = await response.json();
@@ -277,23 +295,53 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Get user profile data function
+  // Enhanced refresh dashboard data function
+  const refreshDashboardData = async () => {
+    if (!user) return null;
+    return await fetchDashboardData();
+  };
+
+  // Get user profile data function - Enhanced with more data
   const getUserProfileData = () => {
     if (!user) return null;
 
     return {
       agentInfo: {
+        _id: user._id,
         agentname: user.agentname,
         agentno: user.agentno,
         mobileNumber: user.mobileNumber,
-        email: dashboardData?.agentInfo?.email || null,
-        joinDate: dashboardData?.agentInfo?.joinDate || null,
+        status: dashboardData?.agentInfo?.status || 'active',
+        loginTime: user.loginTime,
       },
       patsansthaInfo: {
         fullname: user.patsansthaName || dashboardData?.patsansthaInfo?.fullname,
         patsansthaId: user.patsansthaId,
         patname: dashboardData?.patsansthaInfo?.patname || null,
       },
+      collectionInfo: {
+        hasDataToWork: dashboardData?.hasDataToWork || false,
+        currentCollection: dashboardData?.currentCollection || null,
+        totalTransactions: dashboardData?.totalTransactions || 0,
+        collectionStatus: dashboardData?.collectionStatus || null,
+      }
+    };
+  };
+
+  // Check if agent has active collection
+  const hasActiveCollection = () => {
+    return dashboardData?.hasDataToWork === true && dashboardData?.currentCollection && !dashboardData?.currentCollection?.submitted;
+  };
+
+  // Get collection summary
+  const getCollectionSummary = () => {
+    if (!dashboardData?.collectionStatus) return null;
+    
+    return {
+      totalTransactions: dashboardData.collectionStatus.totalTransactions || 0,
+      totalCollected: dashboardData.collectionStatus.totalCollected || 0,
+      submitted: dashboardData.collectionStatus.submitted || false,
+      submittedAt: dashboardData.collectionStatus.submittedAt || null,
     };
   };
 
@@ -313,16 +361,28 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider
       value={{
+        // Core auth state
         user,
         isLoading,
         dashboardData,
+        
+        // Auth functions
         login,
         logout,
         resetSessionTimer,
+        
+        // API helpers
         getAuthHeaders,
         makeAuthenticatedRequest,
+        
+        // Data functions
         fetchDashboardData,
+        refreshDashboardData,
         getUserProfileData,
+        
+        // Collection helpers
+        hasActiveCollection,
+        getCollectionSummary,
       }}
     >
       {children}

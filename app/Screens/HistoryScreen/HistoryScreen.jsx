@@ -19,8 +19,8 @@ import { AuthContext } from "../../context/AuthContext";
 const { width } = Dimensions.get("window");
 
 // API Configuration
-const API_BASE_URL = "http://10.79.49.1:7001/api/v1";
-const TODAY_COLLECTION_ENDPOINT = "/agent/today-collection";
+const API_BASE_URL = "http://10.178.8.1:7001/api/v1";
+const CURRENT_COLLECTION_ENDPOINT = "/agent/today-collection";
 
 const HistoryScreen = () => {
   const { makeAuthenticatedRequest } = useContext(AuthContext);
@@ -29,12 +29,12 @@ const HistoryScreen = () => {
   const [collectionData, setCollectionData] = useState(null);
   const [error, setError] = useState(null);
 
-  // Fetch today's collection data
-  const fetchTodayCollection = async () => {
+  // Fetch current collection data
+  const fetchCurrentCollection = async () => {
     try {
       setError(null);
       const response = await makeAuthenticatedRequest(
-        `${API_BASE_URL}${TODAY_COLLECTION_ENDPOINT}`,
+        `${API_BASE_URL}${CURRENT_COLLECTION_ENDPOINT}`,
         {
           method: "GET",
         }
@@ -46,7 +46,8 @@ const HistoryScreen = () => {
       }
 
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `API Error: ${response.status}`);
       }
 
       const result = await response.json();
@@ -59,10 +60,14 @@ const HistoryScreen = () => {
     } catch (error) {
       console.error("Collection fetch error:", error);
       setError(error.message || "Failed to load collection data");
-      Alert.alert(
-        "Error",
-        "Failed to load today's collection data. Please try again."
-      );
+      
+      // Don't show alert for 404 errors (no collection data)
+      if (!error.message?.includes('404') && !error.message?.includes('No collection data found')) {
+        Alert.alert(
+          "Error",
+          "Failed to load History data. Please try again."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -70,12 +75,12 @@ const HistoryScreen = () => {
 
   // Initialize data load
   useEffect(() => {
-    fetchTodayCollection();
+    fetchCurrentCollection();
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchTodayCollection();
+    await fetchCurrentCollection();
     setRefreshing(false);
   };
 
@@ -106,120 +111,71 @@ const HistoryScreen = () => {
     return timeString;
   };
 
-  const getCollectionStatus = (collAmt, time) => {
-    if (collAmt > 0 && time) {
-      return "collected";
-    } else {
-      return "pending";
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    const statusMap = {
-      collected: faCheckCircle,
-      pending: faClock,
-      failed: faTimesCircle,
-    };
-    return statusMap[status] || faClock;
-  };
-
-  
-
-  const getStatusColor = (status) => {
-    const colorMap = {
-      collected: "#22C55E",
-      pending: "#F59E0B",
-      failed: "#EF4444",
-    };
-    return colorMap[status] || "#F59E0B";
-  };
-
   // Show only collected transactions
   const getCollectedTransactions = () => {
     if (!collectionData?.transactions) return [];
     return collectionData.transactions.filter((t) => t.collAmt > 0);
   };
 
-  // Sort transactions to show latest first
-const getSortedTransactions = (transactions) => {
-  return transactions.sort((a, b) => {
-    // First sort by date
-    const dateA = new Date(a.date);
-    const dateB = new Date(b.date);
-    
-    if (dateA.getTime() !== dateB.getTime()) {
-      return dateB - dateA; // Latest date first
-    }
-    
-    // If dates are same, sort by time
-    if (a.time && b.time) {
-      // Convert time to comparable format
-      const timeA = convertTimeToMinutes(a.time);
-      const timeB = convertTimeToMinutes(b.time);
-      return timeB - timeA; // Latest time first
-    }
-    
-    // If one has time and other doesn't, prioritize the one with time
-    if (a.time && !b.time) return -1;
-    if (!a.time && b.time) return 1;
-    
-    return 0;
-  });
-};
-
-// Helper function to convert time string to minutes for comparison
-const convertTimeToMinutes = (timeString) => {
-  if (!timeString) return 0;
-  
-  // Handle format like "11:09:43 am" or "2:30:15 pm"
-  const [time, period] = timeString.toLowerCase().split(' ');
-  const [hours, minutes] = time.split(':').map(Number);
-  
-  let totalMinutes = minutes;
-  if (period === 'pm' && hours !== 12) {
-    totalMinutes += (hours + 12) * 60;
-  } else if (period === 'am' && hours === 12) {
-    totalMinutes += 0; // 12 AM is 0 hours
-  } else {
-    totalMinutes += hours * 60;
-  }
-  
-  return totalMinutes;
-};
-
-  const filteredTransactions = getSortedTransactions(getCollectedTransactions());
-  // Calculate summary stats
-  const getSummaryStats = () => {
-    if (!collectionData?.transactions) {
-      return {
-        totalCollected: 0,
-        totalPending: 0,
-        collectedCount: 0,
-        pendingCount: 0,
-        totalAmount: 0,
-      };
-    }
-
-    const collected = collectionData.transactions.filter((t) => t.collAmt > 0);
-    const pending = collectionData.transactions.filter((t) => t.collAmt === 0);
-
-    const totalCollected = collected.reduce((sum, t) => sum + t.collAmt, 0);
-    const totalPending = pending.reduce((sum, t) => sum + t.prevBalance, 0);
-    const totalAmount = collectionData.transactions.reduce(
-      (sum, t) => sum + t.collAmt,
-      0
-    );
-
-    return {
-      totalCollected,
-      totalPending,
-      collectedCount: collected.length,
-      pendingCount: pending.length,
-      totalAmount,
-    };
+  // Sort transactions to show latest first (by time)
+  const getSortedTransactions = (transactions) => {
+    return transactions.sort((a, b) => {
+      // First sort by date (latest first)
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      
+      if (dateA.getTime() !== dateB.getTime()) {
+        return dateB - dateA; // Latest date first
+      }
+      
+      // If dates are same, sort by time (latest first)
+      if (a.time && b.time) {
+        const timeA = convertTimeToMinutes(a.time);
+        const timeB = convertTimeToMinutes(b.time);
+        return timeB - timeA; // Latest time first
+      }
+      
+      // If one has time and other doesn't, prioritize the one with time
+      if (a.time && !b.time) return -1;
+      if (!a.time && b.time) return 1;
+      
+      return 0;
+    });
   };
 
-  const stats = getSummaryStats();
+  // Helper function to convert time string to minutes for comparison
+  const convertTimeToMinutes = (timeString) => {
+    if (!timeString) return 0;
+    
+    try {
+      // Handle format like "5:18:23 pm" or "2:30:15 pm"
+      const [time, period] = timeString.toLowerCase().split(' ');
+      const [hours, minutes, seconds] = time.split(':').map(Number);
+      
+      let totalMinutes = minutes + (seconds || 0) / 60;
+      
+      if (period === 'pm' && hours !== 12) {
+        totalMinutes += (hours + 12) * 60;
+      } else if (period === 'am' && hours === 12) {
+        totalMinutes += 0; // 12 AM is 0 hours
+      } else {
+        totalMinutes += hours * 60;
+      }
+      
+      return totalMinutes;
+    } catch (error) {
+      console.error('Error parsing time:', timeString, error);
+      return 0;
+    }
+  };
+
+  const filteredTransactions = getSortedTransactions(getCollectedTransactions());
+
+  // Calculate total collected amount from API data
+  const getTotalCollectedAmount = () => {
+    if (!collectionData?.transactions) return 0;
+    return collectionData.transactions.reduce((sum, t) => sum + t.collAmt, 0);
+  };
 
   const TransactionItem = ({ transaction }) => {
     return (
@@ -249,13 +205,12 @@ const convertTimeToMinutes = (timeString) => {
     );
   };
 
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Today's Collection</Text>
+          <Text style={styles.headerTitle}>History</Text>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#6739B7" />
@@ -271,8 +226,57 @@ const convertTimeToMinutes = (timeString) => {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Today's Collections</Text>
+        <Text style={styles.headerTitle}>History</Text>
+        {collectionData && (
+          <View style={styles.headerStats}>
+            <Text style={styles.headerStatsText}>
+              {collectionData.collectedCustomers} of {collectionData.totalCustomers}
+            </Text>
+          </View>
+        )}
       </View>
+
+      {/* Collection Summary */}
+      {collectionData && (
+        <View style={styles.summaryContainer}>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>Summary</Text>
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryValue}>
+                  {formatAmount(getTotalCollectedAmount())}
+                </Text>
+                <Text style={styles.summaryLabel}>Total Collected</Text>
+              </View>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryValue}>
+                  {collectionData.collectedCustomers}
+                </Text>
+                <Text style={styles.summaryLabel}>Customers</Text>
+              </View>
+            </View>
+            
+            {/* Collection Status */}
+            <View style={styles.statusIndicator}>
+              <View style={[
+                styles.statusDot, 
+                { backgroundColor: collectionData.submitted ? '#22C55E' : '#F59E0B' }
+              ]} />
+              <Text style={[
+                styles.statusText,
+                { color: collectionData.submitted ? '#22C55E' : '#F59E0B' }
+              ]}>
+                {collectionData.submitted ? 'Submitted' : 'In Progress'}
+              </Text>
+              {collectionData.submitted && collectionData.submittedAt && (
+                <Text style={styles.submittedTime}>
+                  • {collectionData.submittedAt}
+                </Text>
+              )}
+            </View>
+          </View>
+        </View>
+      )}
 
       <ScrollView
         style={styles.scrollContainer}
@@ -289,9 +293,10 @@ const convertTimeToMinutes = (timeString) => {
         <View style={styles.transactionList}>
           {filteredTransactions.length > 0 ? (
             <>
-              {filteredTransactions.map((transaction) => (
+              <Text style={styles.sectionTitle}>Transactions</Text>
+              {filteredTransactions.map((transaction, index) => (
                 <TransactionItem
-                  key={transaction._id}
+                  key={`${transaction.accountNo}-${index}`}
                   transaction={transaction}
                 />
               ))}
@@ -301,9 +306,15 @@ const convertTimeToMinutes = (timeString) => {
               <View style={styles.emptyIconContainer}>
                 <FontAwesomeIcon icon={faReceipt} size={48} color="#E5E7EB" />
               </View>
-              <Text style={styles.emptyStateText}>No collections found</Text>
+              <Text style={styles.emptyStateText}>
+                {error?.includes('No collection data found') 
+                  ? 'No Collection Data' 
+                  : 'No Collections Yet'}
+              </Text>
               <Text style={styles.emptyStateSubtext}>
-                Pull to refresh for latest data
+                {error?.includes('No collection data found')
+                  ? 'Please contact your Patsanstha to upload customer data'
+                  : 'Collections will appear here once you start collecting'}
               </Text>
             </View>
           )}
@@ -335,6 +346,87 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontFamily: "DMSans-Bold",
   },
+  headerStats: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  headerStatsText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
+    fontFamily: "DMSans-Bold",
+  },
+  summaryContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  summaryCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1F2937",
+    fontFamily: "DMSans-Bold",
+    marginBottom: 12,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  summaryItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  summaryValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1F2937",
+    fontFamily: "DMSans-Bold",
+    marginBottom: 4,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+    fontFamily: "DMSans-Medium",
+  },
+  statusIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#F3F4F6",
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: "DMSans-Bold",
+  },
+  submittedTime: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginLeft: 4,
+    fontFamily: "DMSans-Medium",
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -348,6 +440,14 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1F2937",
+    fontFamily: "DMSans-Bold",
+    marginBottom: 12,
+    marginTop: 16,
   },
   transactionList: {
     paddingHorizontal: 20,
@@ -369,7 +469,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     borderWidth: 1,
     borderColor: "#F8FAFC",
-    marginTop:10,
+    marginTop: 10,
   },
   transactionLeft: {
     flexDirection: "row",
@@ -409,25 +509,9 @@ const styles = StyleSheet.create({
   transactionRight: {
     alignItems: "flex-end",
   },
-  statusContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginLeft: 4,
-    fontFamily: "DMSans-Bold",
-  },
   amount: {
     fontSize: 16,
     color: "#22C55E",
-    fontFamily: "DMSans-Bold",
-  },
-  pendingAmount: {
-    fontSize: 16,
-    color: "#F59E0B",
     fontFamily: "DMSans-Bold",
   },
   emptyState: {
@@ -457,6 +541,8 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     textAlign: "center",
     fontFamily: "DMSans-Medium",
+    paddingHorizontal: 40,
+    lineHeight: 20,
   },
   bottomPadding: {
     height: 20,

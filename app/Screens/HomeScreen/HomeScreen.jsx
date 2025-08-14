@@ -11,7 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -102,13 +102,34 @@ const HomeScreen = () => {
     setRefreshing(false);
   }, [loadDashboardData]);
 
+  // Get data directly from backend response - no calculations needed
+  const getStatsData = () => {
+    if (!dashboardData) {
+      return {
+        totalCustomers: 0,
+        collectedCustomers: 0,
+        remainingCustomers: 0,
+        successRate: 0,
+        totalCollected: 0,
+      };
+    }
+
+    return {
+      totalCustomers: dashboardData.totalCustomers || 0,
+      collectedCustomers: dashboardData.collectedCustomers || 0,
+      remainingCustomers: dashboardData.remainingCustomers || 0,
+      successRate: dashboardData.successRate || 0,
+      totalCollected: dashboardData.collectionStatus?.totalCollected || 0,
+    };
+  };
+
   // Handle PIN confirmation for collection submission
   const handlePinConfirm = useCallback(async (pin) => {
     setPinProcessing(true);
     
     try {
       const response = await makeAuthenticatedRequest(
-        'http://10.79.49.1:7001/api/v1/agent/submit-collection',
+        'http://10.178.8.1:7001/api/v1/agent/submit-collection',
         {
           method: 'POST',
           headers: {
@@ -151,9 +172,6 @@ const HomeScreen = () => {
         
         // Use the exact error message from backend
         const errorMessage = result.message || 'Failed to submit collection';
-        
-        // For all errors including incorrect password (401), just return false to show error in modal
-        // Don't close modal for password errors, let user try again
         if (response.status === 401) {
           return false; // This will show the error in PIN modal and keep it open
         }
@@ -193,9 +211,10 @@ const HomeScreen = () => {
 
   // Custom confirmation dialog component
   const showConfirmationDialog = () => {
+    const statsData = getStatsData();
     Alert.alert(
       'Submit Collection',
-      `Are you sure you want to submit today's collection?\n\nAmount: ₹${calculations.totalCollected.toLocaleString('en-IN')}\nCustomers: ${calculations.collectedCustomers}\n\nThis action cannot be undone.`,
+      `Are you sure you want to submit today's collection?\n\nAmount: ₹${statsData.totalCollected.toLocaleString('en-IN')}\nCustomers: ${statsData.collectedCustomers}\n\nThis action cannot be undone.`,
       [
         {
           text: 'Cancel',
@@ -221,7 +240,7 @@ const HomeScreen = () => {
     if (submitting || pinProcessing) return;
 
     // Check if collection is already submitted
-    if (dashboardData?.collectionStatus?.submitted) {
+    if (dashboardData?.currentCollection?.submitted) {
       Alert.alert(
         'Already Submitted',
         'Collection has already been submitted today.',
@@ -232,7 +251,8 @@ const HomeScreen = () => {
     }
 
     // Check if there are any collections to submit
-    if (calculations.collectedCustomers === 0) {
+    const statsData = getStatsData();
+    if (statsData.collectedCustomers === 0) {
       Alert.alert(
         'No Collections',
         'No collections to submit. Please collect from customers first.',
@@ -243,7 +263,7 @@ const HomeScreen = () => {
     }
 
     showConfirmationDialog();
-  }, [submitting, pinProcessing, dashboardData?.collectionStatus?.submitted, calculations, showConfirmationDialog]);
+  }, [submitting, pinProcessing, dashboardData?.currentCollection?.submitted, showConfirmationDialog]);
 
   // Handle PIN modal close
   const handlePinModalClose = useCallback(() => {
@@ -251,37 +271,11 @@ const HomeScreen = () => {
     setPinProcessing(false);
   }, []);
 
-  // Memoized calculations for better performance
-  const calculations = useMemo(() => {
-    if (!dashboardData?.currentCollection?.transactions) {
-      return {
-        collectedCustomers: 0,
-        remainingCustomers: 0,
-        totalTransactions: dashboardData?.totalTransactions || 0,
-        totalCollected: dashboardData?.collectionStatus?.totalCollected || 0,
-        successRate: 0,
-      };
-    }
-
-    const transactions = dashboardData.currentCollection.transactions;
-    const collectedCustomers = transactions.filter(t => t.collAmt > 0).length;
-    const totalTransactions = dashboardData.totalTransactions || 0;
-    const remainingCustomers = totalTransactions - collectedCustomers;
-    const totalCollected = dashboardData.collectionStatus?.totalCollected || 0;
-    const successRate = totalTransactions > 0 ? Math.round((collectedCustomers / totalTransactions) * 100) : 0;
-
-    return {
-      collectedCustomers,
-      remainingCustomers,
-      totalTransactions,
-      totalCollected,
-      successRate,
-    };
-  }, [dashboardData]);
-
   const formatCurrency = useCallback((amount) => {
     return `₹${amount.toLocaleString('en-IN')}`;
   }, []);
+
+  const statsData = getStatsData();
 
   // Loading state
   if (loading || authLoading) {
@@ -355,7 +349,7 @@ const HomeScreen = () => {
             </TouchableOpacity>
           </View>
           
-          {/* Centered Bank Info Section */}
+          {/* Centered Bank Info Section - Updated to use new structure */}
           <View style={HomeCSS.bankInfoSection}>
             <BankLogo />
             <Text style={HomeCSS.bankName}>
@@ -382,21 +376,21 @@ const HomeScreen = () => {
             <Text style={HomeCSS.collectionHeaderText}>Today's Collection</Text>
           </View>
           <Text style={HomeCSS.collectionAmount}>
-            {formatCurrency(calculations.totalCollected)}
+            {formatCurrency(statsData.totalCollected)}
           </Text>
           <Text style={HomeCSS.collectionSubtext}>
-            From {calculations.collectedCustomers} customers
+            From {statsData.collectedCustomers} customers
           </Text>
           
           <View style={HomeCSS.collectionActions}>
             <TouchableOpacity 
               style={[
                 HomeCSS.actionButton, 
-                (dashboardData?.collectionStatus?.submitted || calculations.collectedCustomers === 0 || submitting || pinProcessing) 
+                (dashboardData?.currentCollection?.submitted || statsData.collectedCustomers === 0 || submitting || pinProcessing) 
                   ? { opacity: 0.5 } 
                   : {}
               ]}
-              disabled={dashboardData?.collectionStatus?.submitted || calculations.collectedCustomers === 0 || submitting || pinProcessing}
+              disabled={dashboardData?.currentCollection?.submitted || statsData.collectedCustomers === 0 || submitting || pinProcessing}
               onPress={handleSubmitCollection}
             >
               {(submitting || pinProcessing) ? (
@@ -406,7 +400,7 @@ const HomeScreen = () => {
               )}
               <Text style={HomeCSS.actionButtonText}>
                 {(submitting || pinProcessing) ? 'Processing...' : 
-                 dashboardData?.collectionStatus?.submitted ? 'Submitted' : 'Submit'}
+                 dashboardData?.currentCollection?.submitted ? 'Submitted' : 'Submit'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -420,7 +414,7 @@ const HomeScreen = () => {
               <View style={[HomeCSS.statIcon, { backgroundColor: '#EBF8FF' }]}>
                 <FontAwesomeIcon icon={faUsers} size={20} color="#3182CE" />
               </View>
-              <Text style={HomeCSS.statNumber}>{calculations.totalTransactions}</Text>
+              <Text style={HomeCSS.statNumber}>{statsData.totalCustomers}</Text>
               <Text style={HomeCSS.statLabel}>Total Customers</Text>
             </View>
 
@@ -429,7 +423,7 @@ const HomeScreen = () => {
               <View style={[HomeCSS.statIcon, { backgroundColor: '#FEF5E7' }]}>
                 <FontAwesomeIcon icon={faClockRotateLeft} size={20} color="#F6AD55" />
               </View>
-              <Text style={HomeCSS.statNumber}>{calculations.remainingCustomers}</Text>
+              <Text style={HomeCSS.statNumber}>{statsData.remainingCustomers}</Text>
               <Text style={HomeCSS.statLabel}>Remaining</Text>
             </View>
           </View>
@@ -440,7 +434,7 @@ const HomeScreen = () => {
               <View style={[HomeCSS.statIcon, { backgroundColor: '#F0FDF4' }]}>
                 <FontAwesomeIcon icon={faCheckCircle} size={20} color="#22C55E" />
               </View>
-              <Text style={HomeCSS.statNumber}>{calculations.collectedCustomers}</Text>
+              <Text style={HomeCSS.statNumber}>{statsData.collectedCustomers}</Text>
               <Text style={HomeCSS.statLabel}>Collected</Text>
             </View>
 
@@ -449,21 +443,11 @@ const HomeScreen = () => {
               <View style={[HomeCSS.statIcon, { backgroundColor: '#F3E8FF' }]}>
                 <FontAwesomeIcon icon={faChartLine} size={20} color="#8B5CF6" />
               </View>
-              <Text style={HomeCSS.statNumber}>{calculations.successRate}%</Text>
+              <Text style={HomeCSS.statNumber}>{statsData.successRate}%</Text>
               <Text style={HomeCSS.statLabel}>Success Rate</Text>
             </View>
           </View>
         </View>
-
-        {/* Additional Information Section */}
-        {dashboardData?.additionalInfo && (
-          <View style={HomeCSS.additionalInfoContainer}>
-            <Text style={HomeCSS.additionalInfoTitle}>Additional Information</Text>
-            <Text style={HomeCSS.additionalInfoText}>
-              {dashboardData.additionalInfo}
-            </Text>
-          </View>
-        )}
 
       </ScrollView>
 
@@ -473,7 +457,7 @@ const HomeScreen = () => {
         onClose={handlePinModalClose}
         onConfirm={handlePinConfirm}
         customer={{ name: 'Collection Submission' }}
-        amount={calculations.totalCollected}
+        amount={statsData.totalCollected}
         isProcessing={pinProcessing}
       />
     </SafeAreaView>
