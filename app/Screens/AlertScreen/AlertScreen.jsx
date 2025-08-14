@@ -1,44 +1,115 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Dimensions,
+  ActivityIndicator,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  View
+  View,
 } from 'react-native';
 
-const { width } = Dimensions.get('window');
-
 const AlertScreen = () => {
-  const [activeTab, setActiveTab] = useState('all');
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
-  const tabs = [
-    { id: 'all', title: 'All', count: 0 },
-    { id: 'unread', title: 'Unread', count: 0 },
-    { id: 'transaction', title: 'Transactions', count: 0 },
-  ];
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch('http://10.178.8.1:7001/api/v1/agent/dashboard');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setDashboardData(result.data);
+        setError(null);
+      } else {
+        throw new Error(result.message || 'Failed to fetch dashboard data');
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching dashboard data:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchDashboardData();
+  };
+
+  const formatMessageDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-IN', { 
+        day: '2-digit', 
+        month: 'short', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'Recently updated';
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-     <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
       {/* Header */}
       <View style={styles.header}>       
         <Text style={styles.headerTitle}>Alerts</Text>   
       </View>
-      {/* Under Construction Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.constructionContainer}>
-          <View style={styles.constructionIcon}>
-            <Text style={styles.constructionEmoji}>🚧</Text>
+
+      {/* Content */}
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#6739B7" />
+            <Text style={styles.loadingText}>Loading...</Text>
           </View>
-          
-          <Text style={styles.constructionTitle}>Under Construction</Text>
-          <Text style={styles.constructionSubtitle}>We're working hard to bring you something amazing!</Text>
-          
-        </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorEmoji}>⚠️</Text>
+            <Text style={styles.errorTitle}>Connection Error</Text>
+            <Text style={styles.errorSubtitle}>
+              Unable to fetch latest updates. Pull down to retry.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.messageContainer}>
+            {/* Welcome Message */}
+            {dashboardData?.patsansthaInfo?.message && (
+              <View style={styles.welcomeBanner}>
+                <Text style={styles.welcomeText}>
+                  {dashboardData.patsansthaInfo.message}
+                </Text>
+                <Text style={styles.timeText}>
+                  {formatMessageDate(dashboardData.patsansthaInfo.messageUpdatedAt)}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -50,7 +121,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   header: {
-   backgroundColor: '#6739B7',
+    backgroundColor: '#6739B7',
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 24,
@@ -58,76 +129,57 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  backButton: {
-    padding: 4,
-  },
-  backIcon: {
-    fontSize: 24,
-    color: '#FFFFFF',
-  },
   headerTitle: {
     fontSize: 18,
     color: '#FFFFFF',
     fontWeight: '600',
     fontFamily: 'DMSans-Bold',
   },
-  markAllButton: {
-    padding: 4,
-    opacity: 0.6,
-  },
-  markAllText: {
-    fontSize: 14,
-    color: '#E0E7FF',
-    fontWeight: '500',
-  },
-  tabsContainer: {
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  tabs: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 8,
-  },
-  tab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-  },
-  activeTab: {
-    backgroundColor: '#8B5CF6',
-  },
-  tabText: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  activeTabText: {
-    color: '#FFFFFF',
-  },
   content: {
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  constructionContainer: {
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6B7280',
+    fontFamily: 'DMSans-Medium',
+  },
+  errorContainer: {
     alignItems: 'center',
     paddingVertical: 40,
     paddingHorizontal: 20,
   },
-  constructionIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  errorEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  errorTitle: {
+    fontSize: 24,
+    color: '#EF4444',
+    fontWeight: '700',
+    marginBottom: 8,
+    fontFamily: 'DMSans-Bold',
+  },
+  errorSubtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    fontFamily: 'DMSans-Medium',
+  },
+  messageContainer: {
+    padding: 20,
+  },
+  welcomeBanner: {
     backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
+    borderRadius: 16,
+    padding: 24,
     alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#8B5CF6',
+    shadowColor: '#6739B7',
     shadowOffset: {
       width: 0,
       height: 4,
@@ -136,107 +188,20 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
-  constructionEmoji: {
-    fontSize: 48,
-  },
-  constructionTitle: {
-    fontSize: 28,
-    color: '#6B46C1',
-    marginBottom: 8,
+  welcomeText: {
+    fontSize: 32,
+    color: '#6739B7',
+    fontWeight: '700',
     textAlign: 'center',
+    marginBottom: 12,
+    textTransform: 'capitalize',
     fontFamily: 'DMSans-Bold',
   },
-  constructionSubtitle: {
+  timeText: {
     fontSize: 16,
     color: '#6B7280',
     textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 22,
     fontFamily: 'DMSans-Medium',
-  },
-  featuresContainer: {
-    width: '100%',
-    marginBottom: 32,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#8B5CF6',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  featureIcon: {
-    fontSize: 24,
-    marginRight: 16,
-  },
-  featureText: {
-    fontSize: 16,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  progressContainer: {
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  progressText: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  progressBar: {
-    width: '80%',
-    height: 8,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  progressFill: {
-    width: '75%',
-    height: '100%',
-    backgroundColor: '#8B5CF6',
-    borderRadius: 4,
-  },
-  progressPercentage: {
-    fontSize: 16,
-    color: '#6B46C1',
-    fontWeight: '600',
-  },
-  notifyButton: {
-    backgroundColor: '#6B46C1',
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 25,
-    marginBottom: 16,
-    shadowColor: '#6B46C1',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  notifyButtonText: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  estimatedTime: {
-    fontSize: 14,
-    color: '#8B5CF6',
-    fontWeight: '500',
-    textAlign: 'center',
   },
 });
 

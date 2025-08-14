@@ -1,4 +1,4 @@
-import { faArrowLeft, faClock, faEnvelope, faMapMarkerAlt, faPhoneAlt, faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faClock, faEnvelope, faGlobe, faMapMarkerAlt, faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
@@ -21,27 +21,27 @@ const { width } = Dimensions.get('window');
 const HelpDeskScreen = () => {
   const navigation = useNavigation();
 
-  const handlePhoneCall = () => {
-    const phoneNumber = 'tel:+919822475463';
-    Linking.canOpenURL(phoneNumber)
-      .then((supported) => {
-        if (supported) {
-          return Linking.openURL(phoneNumber);
-        } else {
-          Alert.alert('Error', 'Phone calls are not supported on this device');
-        }
-      })
-      .catch((err) => console.error('An error occurred', err));
-  };
-
   const handleEmail = () => {
-    const email = 'mailto:support@patsanstha.in';
+    const email = 'mailto:techyverve@gmail.com';
     Linking.canOpenURL(email)
       .then((supported) => {
         if (supported) {
           return Linking.openURL(email);
         } else {
           Alert.alert('Error', 'Email is not supported on this device');
+        }
+      })
+      .catch((err) => console.error('An error occurred', err));
+  };
+
+  const handleWebsite = () => {
+    const website = 'https://www.techyverve.in';
+    Linking.canOpenURL(website)
+      .then((supported) => {
+        if (supported) {
+          return Linking.openURL(website);
+        } else {
+          Alert.alert('Error', 'Website cannot be opened on this device');
         }
       })
       .catch((err) => console.error('An error occurred', err));
@@ -62,14 +62,14 @@ const HelpDeskScreen = () => {
         <View style={styles.headerOverlay}>
           {/* Top Corner Icons */}
           <View style={styles.topCornerIcons}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.backIcon}
               onPress={() => navigation.goBack()}
               activeOpacity={0.8}
             >
               <FontAwesomeIcon icon={faArrowLeft} size={20} color="#FFFFFF" />
             </TouchableOpacity>
-            
+
             <View style={styles.placeholder} />
           </View>
 
@@ -85,34 +85,20 @@ const HelpDeskScreen = () => {
       </View>
 
       {/* Content */}
-      <ScrollView 
+      <ScrollView
         style={styles.contentContainer}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         <Text style={styles.sectionTitle}>How can we help you?</Text>
-        
+
         <Text style={styles.sectionDescription}>
           Get in touch with our support team for any questions or assistance
         </Text>
 
-        <TouchableOpacity 
-          style={styles.card} 
-          onPress={handlePhoneCall}
-          activeOpacity={0.7}
-        >
-          <View style={styles.iconContainer}>
-            <FontAwesomeIcon icon={faPhoneAlt} size={24} color="#FFFFFF" />
-          </View>
-          <View style={styles.cardText}>
-            <Text style={styles.cardTitle}>Call Us</Text>
-            <Text style={styles.cardDescription}>+91 98224 75463</Text>
-            <Text style={styles.cardSubtext}>Tap to call directly</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.card} 
+        {/* Email */}
+        <TouchableOpacity
+          style={styles.card}
           onPress={handleEmail}
           activeOpacity={0.7}
         >
@@ -121,15 +107,31 @@ const HelpDeskScreen = () => {
           </View>
           <View style={styles.cardText}>
             <Text style={styles.cardTitle}>Email Us</Text>
-            <Text style={styles.cardDescription}>support@patsanstha.in</Text>
+            <Text style={styles.cardDescription}>techyverve@gmail.com</Text>
             <Text style={styles.cardSubtext}>Tap to open email client</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* Website */}
+        <TouchableOpacity
+          style={styles.card}
+          onPress={handleWebsite}
+          activeOpacity={0.7}
+        >
+          <View style={styles.iconContainer}>
+            <FontAwesomeIcon icon={faGlobe} size={24} color="#FFFFFF" />
+          </View>
+          <View style={styles.cardText}>
+            <Text style={styles.cardTitle}>Visit Our Website</Text>
+            <Text style={styles.cardDescription}>www.techyverve.in</Text>
+            <Text style={styles.cardSubtext}>Tap to open in browser</Text>
           </View>
         </TouchableOpacity>
 
         {/* Additional Info Cards */}
         <View style={styles.infoSection}>
           <Text style={styles.infoSectionTitle}>Support Information</Text>
-          
+
           <View style={styles.infoCard}>
             <View style={styles.infoIconContainer}>
               <FontAwesomeIcon icon={faClock} size={20} color="#6739B7" />
@@ -153,18 +155,16 @@ const HelpDeskScreen = () => {
           </View>
         </View>
 
-        <View style={styles.noteContainer}>
-          <Text style={styles.note}>
-            Our support team is dedicated to providing you with the best assistance. 
-            Feel free to reach out for any queries or concerns.
-          </Text>
-        </View>
+        
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 export default HelpDeskScreen;
+
+// Keep your styles object as-is
+
 
 const styles = StyleSheet.create({
   container: {
@@ -274,11 +274,12 @@ const styles = StyleSheet.create({
   },
   sectionDescription: {
     fontSize: 16,
-    fontFamily: 'DMSans-Regular',
+
     color: '#6B7280',
     textAlign: 'center',
     marginBottom: 32,
     lineHeight: 24,
+    fontFamily: "DMSans-Medium",
   },
   card: {
     flexDirection: 'row',
