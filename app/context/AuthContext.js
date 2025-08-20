@@ -4,7 +4,7 @@ import { AppState, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react
 
 export const AuthContext = createContext();
 
-const API_BASE_URL = 'http://10.178.8.1:7001/api/v1'; 
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL
 const LOGIN_ENDPOINT = '/agent/login';
 const LOGOUT_ENDPOINT = '/agent/logout';
 const DASHBOARD_ENDPOINT = '/agent/dashboard';

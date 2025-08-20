@@ -52,7 +52,7 @@ const HomeScreen = () => {
   
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinProcessing, setPinProcessing] = useState(false);
-
+  const baseURL = process.env.EXPO_PUBLIC_API_BASE_URL;
   const loadDashboardData = useCallback(async () => {
     try {
       setError(null);
@@ -110,7 +110,7 @@ const HomeScreen = () => {
     setPinProcessing(true);
     try {
       const response = await makeAuthenticatedRequest(
-        'http://10.178.8.1:7001/api/v1/agent/submit-collection',
+        `${baseURL}/agent/submit-collection`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

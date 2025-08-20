@@ -4,7 +4,6 @@ import React, { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -12,14 +11,13 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { AuthContext } from "../../context/AuthContext";
 
-const { width } = Dimensions.get("window");
 
 // API Configuration
-const API_BASE_URL = "http://10.178.8.1:7001/api/v1";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 const CURRENT_COLLECTION_ENDPOINT = "/agent/today-collection";
 
 const HistoryScreen = () => {

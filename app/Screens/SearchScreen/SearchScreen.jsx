@@ -19,7 +19,6 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Dimensions,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -27,20 +26,18 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { AuthContext } from "../../context/AuthContext.js";
 import CollectionModal from "./components/CollectionModal.jsx";
 import SuccessTransactionPopup from "./components/SuccessTransactionScreen";
 import { styles } from "./styles/SearchScreenStyles.js";
 
-const { width, height } = Dimensions.get("window");
+
 
 const SearchScreen = () => {
   const {
     resetSessionTimer,
-    dashboardData,
-    fetchDashboardData,
     makeAuthenticatedRequest,
   } = useContext(AuthContext);
 
@@ -52,84 +49,74 @@ const SearchScreen = () => {
   const [customers, setCustomers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [agentMeta, setAgentMeta] = useState(null);
 
-  // ADDED: Success popup states
+  // Success popup states
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [successTransactionData, setSuccessTransactionData] = useState(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Load customers from dashboard data
-  // Replace the existing useEffect that loads customers from dashboard data
-useEffect(() => {
-  if (dashboardData?.currentCollection?.transactions) {
-    // Group transactions by customer (using accountNo or mobileNumber as identifier)
-    const customerMap = new Map();
-    
-    dashboardData.currentCollection.transactions.forEach(transaction => {
-      // Use accountNo as the unique identifier for customers
-      const customerId = transaction.accountNo;
-      
-      if (customerMap.has(customerId)) {
-        // Customer already exists, merge transaction data
-        const existingCustomer = customerMap.get(customerId);
-        
-        // Add current transaction amount to previous balance
-        existingCustomer.previousBalance += transaction.collAmt || 0;
-        
-        // Keep the most recent collection date and amount
-        if (transaction.date && transaction.collAmt > 0) {
-          if (!existingCustomer.lastCollection || new Date(transaction.date) > new Date(existingCustomer.lastCollection)) {
-            existingCustomer.lastCollection = transaction.date;
-            existingCustomer.collectionTime = transaction.time;
-            existingCustomer.totalCollection = transaction.collAmt; // Only keep the last collection amount
-          }
-        } else if (!existingCustomer.hasCollection && transaction.collAmt > 0) {
-          // If no previous collection, use this one
-          existingCustomer.totalCollection = transaction.collAmt;
+  // Fetch customers from the new API
+  const fetchCustomers = useCallback(async () => {
+    try {
+      const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+      const response = await makeAuthenticatedRequest(
+        `${API_BASE_URL}/agent/customers`,
+        {
+          method: "GET",
         }
-        
-        // Update hasCollection status
-        existingCustomer.hasCollection = existingCustomer.totalCollection > 0;
-        
-        // Store all transaction IDs for this customer
-        existingCustomer.transactionIds.push(transaction._id);
-        
-      } else {
-        // New customer, create entry
-        const newCustomer = {
-          id: customerId, // Use accountNo as unique ID
-          name: transaction.name,
-          phone: transaction.mobileNumber,
-          address: `Account: ${transaction.accountNo}`,
-          accountNumber: transaction.accountNo,
-          totalCollection: transaction.collAmt || 0, // Last collection amount
-          lastCollection: transaction.date,
-          previousBalance: transaction.prevBalance + (transaction.collAmt || 0), // Original + current collection
-          originalPreviousBalance: transaction.prevBalance, // Store original for reference
-          openingDate: transaction.openingDate,
-          collectionTime: transaction.time,
-          hasCollection: (transaction.collAmt || 0) > 0 && transaction.time !== null,
-          transactionId: transaction._id, // Primary transaction ID
-          transactionIds: [transaction._id] // Array of all transaction IDs for this customer
-        };
-        
-        customerMap.set(customerId, newCustomer);
+      );
+
+      if (!response) {
+        throw new Error("No response received");
       }
-    });
-    
-    // Convert Map to array
-    const transformedCustomers = Array.from(customerMap.values());
-    
-    setCustomers(transformedCustomers);
-    setIsSubmitted(dashboardData.currentCollection.submitted || false);
-    setIsLoading(false);
-  } else if (dashboardData && !dashboardData.currentCollection?.transactions) {
-    setCustomers([]);
-    setIsSubmitted(false);
-    setIsLoading(false);
-  }
-}, [dashboardData]);
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to fetch customers");
+      }
+
+      if (result.success && result.data) {
+        // Transform the customer data to match the expected format
+        const transformedCustomers = result.data.customers.map(customer => ({
+          id: customer.accountNo,
+          name: customer.name,
+          phone: customer.mobileNumber,
+          address: `Account: ${customer.accountNo}`,
+          accountNumber: customer.accountNo,
+          totalCollection: customer.collAmt || 0,
+          lastCollection: null, // You can add date logic if needed
+          previousBalance: customer.prevBalance,
+          originalPreviousBalance: customer.prevBalance,
+          openingDate: customer.openingDate,
+          collectionTime: customer.time,
+          hasCollection: customer.hasCollection,
+          transactionId: customer.accountNo, // Using accountNo as transaction ID
+          transactionIds: [customer.accountNo]
+        }));
+
+        setCustomers(transformedCustomers);
+        setAgentMeta(result.data.agentMeta);
+        setIsSubmitted(false); // Set based on your logic
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      Alert.alert(
+        "Error", 
+        error.message || "Failed to fetch customer data. Please try again."
+      );
+      setIsLoading(false);
+    }
+  }, [makeAuthenticatedRequest]);
+
+  // Initial load
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
+
   // Simulate search delay
   useEffect(() => {
     if (searchQuery.length > 0) {
@@ -176,13 +163,13 @@ useEffect(() => {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await fetchDashboardData();
+      await fetchCustomers();
     } catch (error) {
       Alert.alert("Error", "Failed to refresh data. Please try again.");
     } finally {
       setIsRefreshing(false);
     }
-  }, [fetchDashboardData]);
+  }, [fetchCustomers]);
 
   const handleCollectPress = useCallback(
     (customer) => {
@@ -199,13 +186,12 @@ useEffect(() => {
     [isSubmitted]
   );
 
-  // MODIFIED: Updated to show success popup instead of alert
   const handleCollectionNext = useCallback(
     async (amount, password) => {
       if (!selectedCustomer) return false;
 
       try {
-        const API_BASE_URL = "http://10.79.49.1:7001/api/v1";
+        const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
         const response = await makeAuthenticatedRequest(
           `${API_BASE_URL}/agent/collection/${selectedCustomer.accountNumber}`,
           {
@@ -274,11 +260,10 @@ useEffect(() => {
 
         setCustomers(updatedCustomers);
 
-        // UPDATED: Include customer phone in transaction data for SMS
         const transactionData = {
           amount: parseFloat(amount),
           customerName: selectedCustomer.name,
-          customerPhone: selectedCustomer.phone, // Add customer phone for SMS
+          customerPhone: selectedCustomer.phone,
           transactionId:
             selectedCustomer.transactionId ||
             result.data.transactionId ||
@@ -291,8 +276,8 @@ useEffect(() => {
 
         setSelectedCustomer(null);
 
-        // Refresh dashboard data to get updated totals
-        await fetchDashboardData();
+        // Refresh customer data to get updated totals
+        await fetchCustomers();
 
         return true;
       } catch (error) {
@@ -304,7 +289,7 @@ useEffect(() => {
         return false;
       }
     },
-    [selectedCustomer, customers, makeAuthenticatedRequest, fetchDashboardData]
+    [selectedCustomer, customers, makeAuthenticatedRequest, fetchCustomers]
   );
 
   const handleCollectionModalClose = useCallback(() => {
@@ -312,7 +297,6 @@ useEffect(() => {
     setSelectedCustomer(null);
   }, []);
 
-  // ADDED: Success popup close handler
   const handleSuccessPopupClose = useCallback(() => {
     setShowSuccessPopup(false);
     setSuccessTransactionData(null);
@@ -332,34 +316,8 @@ useEffect(() => {
     });
   };
 
-  const getCollectionStatus = (customer) => {
-    if (isSubmitted) {
-      return {
-        text: "SUBMITTED",
-        color: "#8B5CF6",
-        backgroundColor: "rgba(139, 92, 246, 0.1)",
-      };
-    }
-
-    if (customer.hasCollection) {
-      return {
-        text: "COLLECTED",
-        color: "#22C55E",
-        backgroundColor: "rgba(34, 197, 94, 0.1)",
-      };
-    }
-
-    return {
-      text: "PENDING",
-      color: "#EF4444",
-      backgroundColor: "rgba(239, 68, 68, 0.1)",
-    };
-  };
-
   const renderCustomerItem = useCallback(
     (customer) => {
-      const statusInfo = getCollectionStatus(customer);
-
       return (
         <View key={customer.id} style={styles.customerCard}>
           <View style={styles.customerHeader}>
@@ -435,25 +393,6 @@ useEffect(() => {
     },
     [handleCollectPress, isSubmitted]
   );
-
-  // Get collection summary
-  const collectionSummary = useMemo(() => {
-    const totalCustomers = customers.length;
-    const customersWithCollection = customers.filter(
-      (c) => c.hasCollection
-    ).length;
-    const totalCollectionAmount = customers.reduce(
-      (sum, c) => sum + (c.totalCollection || 0),
-      0
-    );
-
-    return {
-      totalCustomers,
-      customersWithCollection,
-      totalCollectionAmount,
-      pendingCustomers: totalCustomers - customersWithCollection,
-    };
-  }, [customers]);
 
   if (isLoading) {
     return (
@@ -572,7 +511,7 @@ useEffect(() => {
         customer={selectedCustomer}
       />
 
-      {/* ADDED: Success Transaction Popup */}
+      {/* Success Transaction Popup */}
       <SuccessTransactionPopup
         visible={showSuccessPopup}
         onClose={handleSuccessPopupClose}

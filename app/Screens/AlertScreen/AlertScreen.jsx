@@ -20,12 +20,14 @@ const AlertScreen = () => {
     fetchDashboardData();
   }, []);
 
+  const baseURL = process.env.EXPO_PUBLIC_API_BASE_URL
+
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch('http://10.178.8.1:7001/api/v1/agent/dashboard');
+      const response = await fetch(`${baseURL}/agent/dashboard`);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`status: ${response.status}`);
       }
       
       const result = await response.json();

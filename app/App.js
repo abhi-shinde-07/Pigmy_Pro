@@ -24,34 +24,30 @@ export const FONTS = {
 
 const MainApp = () => {
   const { user } = useContext(AuthContext);
+
   const [showSplash, setShowSplash] = useState(true);
-  const [appReady, setAppReady] = useState(false);
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
+  // Load fonts before anything else
   useEffect(() => {
-    async function loadFonts() {
+    (async () => {
       try {
         await Font.loadAsync(FONTS);
-        console.log('✅ Custom fonts loaded successfully');
-        setFontsLoaded(true);
-      } catch (error) {
-        console.warn('❌ Error loading fonts:', error);
+        console.log('✅ Fonts loaded');
+      } catch (err) {
+        console.warn('❌ Font load error:', err);
+      } finally {
         setFontsLoaded(true);
       }
-    }
-    loadFonts();
+    })();
   }, []);
 
-  useEffect(() => {
-    if (!showSplash && !appReady && fontsLoaded) {
-      setTimeout(() => setAppReady(true), 300);
-    }
-  }, [showSplash, appReady, fontsLoaded]);
-
-  if (showSplash || !appReady || !fontsLoaded) {
+  // If fonts not ready yet → stay on splash
+  if (!fontsLoaded || showSplash) {
     return <SplashScreen onAnimationComplete={() => setShowSplash(false)} />;
   }
 
+  // Main app after splash + fonts
   return (
     <SafeAreaProvider>
       {!user ? (
@@ -79,7 +75,6 @@ const MainApp = () => {
 
 export default function App() {
   return (
-    
     <AuthProvider>
       <MainApp />
     </AuthProvider>
