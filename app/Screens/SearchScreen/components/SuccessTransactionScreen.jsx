@@ -107,19 +107,12 @@ const SuccessTransactionPopup = ({
       // Get agent and patsanstha names from AuthContext
       const agentName = safeProfileData.agentInfo.agentname?.toUpperCase() || 'COLLECTION AGENT';
       const patsansthaName = safeProfileData.patsansthaInfo.fullname || 'ORGANIZATION';
-      const agentId = safeProfileData.agentInfo.agentno || 'N/A';
-
+      const currentBalance = transactionData.totalCollction + transactionData.amount + transactionData.previousBalance;
       // Create comprehensive SMS message with AuthContext data
-      const smsMessage = `${patsansthaName}
+      console.log("trasactiondata",transactionData)
+      console.log("currentBalance", currentBalance)
+     const smsMessage = `${patsansthaName} Rs. ${transactionData.amount?.toLocaleString('en-IN')}.00 Received to your Acc. ${transactionData.accountNo} by ${agentName}. Available Bal. Rs. ${currentBalance}.00  Thank you.`;
 
-Transaction Amount: ₹${transactionData.amount?.toLocaleString('en-IN')}
-T-Id: ${transactionData.transactionId}
-Date: ${formatDate(transactionData.date)} ${formatTime(transactionData.date)}
-
-Collected by: ${agentName}
-
-Thank you for your payment.
-`;
 
     
       // Use proper SMS options for better compatibility

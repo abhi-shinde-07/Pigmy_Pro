@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Pigmy_Pro",
-    "slug": "Pigmy_Pro",
+    "name": "Pigmy Pro",
+    "slug": "Pigmy-Pro",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/favic.png",
@@ -9,14 +9,22 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rutikrtr.PigmyPro",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app requires camera access to scan documents.",
+        "NSPhotoLibraryUsageDescription": "This app requires photo library access to upload files.",
+        "NSLocationWhenInUseUsageDescription": "This app requires location access for better service."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/favic.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "usesCleartextTraffic": true,
+      "edgeToEdgeEnabled": true,
+      "package": "com.rutikrtr.PigmyPro"
     },
     "web": {
       "bundler": "metro",
@@ -24,10 +32,32 @@
       "favicon": "./assets/images/favic.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-build-properties",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          },
+          "ios": {
+            "infoPlist": {
+              "NSAppTransportSecurity": {
+                "NSAllowsArbitraryLoads": true
+              }
+            }
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "15cf0905-9166-436e-8418-f8496b876d14"
+      }
     }
   }
 }

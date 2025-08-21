@@ -259,16 +259,15 @@ const SearchScreen = () => {
         });
 
         setCustomers(updatedCustomers);
-
+        console.log(selectedCustomer)
         const transactionData = {
           amount: parseFloat(amount),
           customerName: selectedCustomer.name,
           customerPhone: selectedCustomer.phone,
-          transactionId:
-            selectedCustomer.transactionId ||
-            result.data.transactionId ||
-            `TXN${Date.now()}`,
-          date: result.data.date || new Date().toISOString(),
+          accountNo:
+            selectedCustomer.accountNumber,
+          totalCollction: selectedCustomer.totalCollection,
+          previousBalance: selectedCustomer.previousBalance,
         };
 
         setSuccessTransactionData(transactionData);
