@@ -10,7 +10,7 @@ import {
   faUsers
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -53,6 +53,7 @@ const HomeScreen = () => {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinProcessing, setPinProcessing] = useState(false);
   const baseURL = process.env.EXPO_PUBLIC_API_BASE_URL;
+
   const loadDashboardData = useCallback(async () => {
     try {
       setError(null);
@@ -73,6 +74,16 @@ const HomeScreen = () => {
     }
   }, [fetchDashboardData]);
 
+  // Add focus effect to reload data when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        loadDashboardData();
+      }
+    }, [user, loadDashboardData])
+  );
+
+  // Keep the original useEffect for initial load
   useEffect(() => {
     if (user && !dashboardData) {
       loadDashboardData();
