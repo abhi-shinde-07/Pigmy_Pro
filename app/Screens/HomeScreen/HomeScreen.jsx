@@ -14,7 +14,6 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   RefreshControl,
   SafeAreaView,
@@ -26,6 +25,7 @@ import {
 } from 'react-native';
 import PinModal from '../../components/PinModal';
 import { AuthContext } from '../../context/AuthContext';
+import ModernCollectionModal from './components/ModernCollectionModal'; // Add this import
 import HomeCSS from './styles/HomeCSS';
 
 // Bank Logo Component
@@ -52,6 +52,12 @@ const HomeScreen = () => {
   
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinProcessing, setPinProcessing] = useState(false);
+  
+  // Modern modal states
+  const [showCollectionModal, setShowCollectionModal] = useState(false);
+  const [collectionModalType, setCollectionModalType] = useState('confirm');
+  const [modalMessage, setModalMessage] = useState('');
+  
   const baseURL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
   const loadDashboardData = useCallback(async () => {
@@ -141,54 +147,73 @@ const HomeScreen = () => {
         setShowPinModal(false);
         setPinProcessing(false);
         await loadDashboardData();
-        Alert.alert('Success', result.message || 'Collection submitted successfully!');
+        
+        // Show success modal instead of Alert
+        setCollectionModalType('success');
+        setModalMessage(result.message || 'Collection submitted successfully!');
+        setShowCollectionModal(true);
         return true;
       } else {
         setPinProcessing(false);
         const errorMessage = result.message || 'Failed to submit collection';
         if (response.status === 401) return false;
+        
         setShowPinModal(false);
-        Alert.alert('Error', errorMessage);
+        // Show error modal instead of Alert
+        setCollectionModalType('error');
+        setModalMessage(errorMessage);
+        setShowCollectionModal(true);
         return false;
       }
     } catch (err) {
       console.error('Submit collection error:', err);
       setPinProcessing(false);
       setShowPinModal(false);
-      Alert.alert('Error', 'Network error. Please check your internet connection.');
+      
+      // Show error modal instead of Alert
+      setCollectionModalType('error');
+      setModalMessage('Network error. Please check your internet connection.');
+      setShowCollectionModal(true);
       return false;
     }
   }, [makeAuthenticatedRequest, loadDashboardData]);
 
   const showConfirmationDialog = () => {
-    const statsData = getStatsData();
-    Alert.alert(
-      'Submit Collection',
-      `Are you sure you want to submit today's collection?\n\nAmount: ₹${statsData.totalCollected.toLocaleString('en-IN')}\nCustomers: ${statsData.collectedCustomers}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Submit', onPress: () => setShowPinModal(true) }
-      ]
-    );
+    setCollectionModalType('confirm');
+    setShowCollectionModal(true);
   };
 
   const handleSubmitCollection = useCallback(() => {
     if (submitting || pinProcessing) return;
+    
     if (dashboardData?.currentCollection?.submitted) {
-      Alert.alert('Already Submitted', 'Collection has already been submitted today.');
+      setCollectionModalType('already-submitted');
+      setShowCollectionModal(true);
       return;
     }
+    
     const statsData = getStatsData();
     if (statsData.collectedCustomers === 0) {
-      Alert.alert('No Collections', 'No collections to submit.');
+      setCollectionModalType('no-collections');
+      setShowCollectionModal(true);
       return;
     }
+    
     showConfirmationDialog();
   }, [submitting, pinProcessing, dashboardData]);
 
   const handlePinModalClose = () => {
     setShowPinModal(false);
     setPinProcessing(false);
+  };
+
+  const handleCollectionModalConfirm = () => {
+    setShowCollectionModal(false);
+    setShowPinModal(true);
+  };
+
+  const handleCollectionModalClose = () => {
+    setShowCollectionModal(false);
   };
 
   const formatCurrency = (amount) => `₹${amount.toLocaleString('en-IN')}`;
@@ -331,6 +356,18 @@ const HomeScreen = () => {
         </View>
       </ScrollView>
 
+      {/* Modern Collection Modal */}
+      <ModernCollectionModal
+        visible={showCollectionModal}
+        onClose={handleCollectionModalClose}
+        onConfirm={handleCollectionModalConfirm}
+        type={collectionModalType}
+        amount={statsData.totalCollected}
+        customers={statsData.collectedCustomers}
+        message={modalMessage}
+      />
+
+      {/* PIN Modal */}
       <PinModal
         visible={showPinModal}
         onClose={handlePinModalClose}
