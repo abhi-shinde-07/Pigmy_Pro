@@ -80,15 +80,27 @@ const SuccessTransactionPopup = ({
     }
   };
 
-  // Enhanced SMS function with AuthContext data
+  // Enhanced SMS function with improved feedback
   const sendSMSReceipt = async (autoSend = false) => {
     if (!isSMSAvailable) {
-      Alert.alert('SMS Not Available', 'SMS functionality is not available on this device.');
+      if (!autoSend) {
+        Alert.alert(
+          'SMS Not Available', 
+          'SMS functionality is not available on this device.',
+          [{ text: 'OK', style: 'default' }]
+        );
+      }
       return;
     }
 
     if (!transactionData) {
-      Alert.alert('Error', 'Transaction data not available.');
+      if (!autoSend) {
+        Alert.alert(
+          'Error', 
+          'Transaction data not available.',
+          [{ text: 'OK', style: 'default' }]
+        );
+      }
       return;
     }
 
@@ -108,13 +120,12 @@ const SuccessTransactionPopup = ({
       const agentName = safeProfileData.agentInfo.agentname?.toUpperCase() || 'COLLECTION AGENT';
       const patsansthaName = safeProfileData.patsansthaInfo.fullname || 'ORGANIZATION';
       const currentBalance = transactionData.totalCollction + transactionData.amount + transactionData.previousBalance;
+      
       // Create comprehensive SMS message with AuthContext data
       console.log("trasactiondata",transactionData)
       console.log("currentBalance", currentBalance)
-     const smsMessage = `${patsansthaName} Rs. ${transactionData.amount?.toLocaleString('en-IN')}.00 Received to your Acc. ${transactionData.accountNo} by ${agentName}. Available Bal. Rs. ${currentBalance}.00  Thank you.`;
+      const smsMessage = `${patsansthaName} Rs. ${transactionData.amount?.toLocaleString('en-IN')}.00 Received to your Acc. ${transactionData.accountNo} by ${agentName}. Available Bal. Rs. ${currentBalance}.00  Thank you.`;
 
-
-    
       // Use proper SMS options for better compatibility
       const smsOptions = {
         attachments: undefined, // Ensure no attachments
@@ -126,20 +137,20 @@ const SuccessTransactionPopup = ({
         smsOptions
       );
 
-      // Handle different result scenarios
+      // Handle different result scenarios with improved feedback
       if (result.result === 'sent') {
         if (!autoSend) {
-          Alert.alert('Success', 'SMS receipt sent successfully!');
+          Alert.alert(
+            'Success ✅', 
+            'SMS receipt sent successfully!',
+            [{ text: 'OK', style: 'default' }]
+          );
         }
       } else if (result.result === 'cancelled') {
         console.log('SMS sending was cancelled by user');
+        // Don't show alert for user cancellation in auto-send mode
         if (!autoSend) {
-          Alert.alert('Cancelled', 'SMS sending was cancelled.');
-        }
-      } else if (result.result === 'unknown') {
-        console.log('SMS result unknown - might have been sent');
-        if (!autoSend) {
-          Alert.alert('Info', 'SMS may have been sent. Please check your messages.');
+          // User intentionally cancelled, no need for error alert
         }
       }
 
@@ -148,19 +159,27 @@ const SuccessTransactionPopup = ({
     } catch (error) {
       console.error('Error sending SMS:', error);
       
-      // More specific error handling
-      let errorMessage = 'Failed to send SMS receipt.';
-      
-      if (error.message?.includes('not available')) {
-        errorMessage = 'SMS service is not available on this device.';
-      } else if (error.message?.includes('permission')) {
-        errorMessage = 'SMS permission is required to send messages.';
-      } else if (Platform.OS === 'ios' && error.message?.includes('MFMessageComposeViewController')) {
-        errorMessage = 'SMS app is not available. Please check your device settings.';
-      }
-
+      // More specific error handling with better feedback
       if (!autoSend) {
-        Alert.alert('Error', errorMessage + ' Please try again.');
+        let errorTitle = 'SMS Failed';
+        let errorMessage = 'Unable to send SMS receipt.';
+        
+        if (error.message?.includes('not available')) {
+          errorTitle = 'SMS Not Available';
+          errorMessage = 'SMS service is not available on this device.';
+        } else if (error.message?.includes('permission')) {
+          errorTitle = 'Permission Required';
+          errorMessage = 'Please allow SMS permissions in your device settings.';
+        } else if (Platform.OS === 'ios' && error.message?.includes('MFMessageComposeViewController')) {
+          errorTitle = 'SMS App Required';
+          errorMessage = 'Messages app is required to send SMS.';
+        }
+
+        Alert.alert(
+          errorTitle, 
+          errorMessage,
+          [{ text: 'OK', style: 'default' }]
+        );
       }
       
       return { result: 'error', error };

@@ -15,6 +15,7 @@ import {
   View
 } from "react-native";
 import { AuthContext } from "../../context/AuthContext";
+import TransactionDetailPopup from "./components/TransactionDetailPopup";
 
 // API Configuration
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
@@ -26,6 +27,10 @@ const HistoryScreen = () => {
   const [loading, setLoading] = useState(true);
   const [collectionData, setCollectionData] = useState(null);
   const [error, setError] = useState(null);
+  
+  // State for popup
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   // Fetch current collection data
   const fetchCurrentCollection = async () => {
@@ -193,9 +198,25 @@ const HistoryScreen = () => {
     return collectionData.transactions.reduce((sum, t) => sum + t.collAmt, 0);
   };
 
+  // Handle transaction item click
+  const handleTransactionPress = (transaction) => {
+    setSelectedTransaction(transaction);
+    setPopupVisible(true);
+  };
+
+  // Handle popup close
+  const handlePopupClose = () => {
+    setPopupVisible(false);
+    setSelectedTransaction(null);
+  };
+
   const TransactionItem = ({ transaction }) => {
     return (
-      <TouchableOpacity style={styles.transactionItem} activeOpacity={0.7}>
+      <TouchableOpacity 
+        style={styles.transactionItem} 
+        activeOpacity={0.7}
+        onPress={() => handleTransactionPress(transaction)}
+      >
         <View style={styles.transactionLeft}>
           <View style={styles.iconContainer}>
             <FontAwesomeIcon icon={faUser} size={20} color="#6739B7" />
@@ -338,6 +359,13 @@ const HistoryScreen = () => {
 
         <View style={styles.bottomPadding} />
       </ScrollView>
+
+      {/* Transaction Detail Popup */}
+      <TransactionDetailPopup
+        visible={popupVisible}
+        onClose={handlePopupClose}
+        transaction={selectedTransaction}
+      />
     </SafeAreaView>
   );
 };
@@ -559,9 +587,6 @@ const styles = StyleSheet.create({
     fontFamily: "DMSans-Medium",
     paddingHorizontal: 40,
     lineHeight: 20,
-  },
-  bottomPadding: {
-    height: 20,
   },
 });
 
