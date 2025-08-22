@@ -140,13 +140,10 @@ const ProfileScreen = () => {
           <View style={styles.bankSection}>
             <View style={styles.bankHeader}>
               <FontAwesomeIcon icon={faBuilding} size={16} color="#6739B7" />
-              <Text style={styles.bankTitle}>Organization Information</Text>
+              <Text style={styles.bankTitle}>Organization Name</Text>
             </View>
             <Text style={styles.bankName}>
               {safeProfileData.patsansthaInfo.fullname}
-            </Text>
-            <Text style={styles.bankCode}>
-              Patsanstha ID: {safeProfileData.patsansthaInfo.patsansthaId}
             </Text>
           </View>
         </View>

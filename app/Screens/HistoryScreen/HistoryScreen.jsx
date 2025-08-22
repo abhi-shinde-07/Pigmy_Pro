@@ -350,7 +350,7 @@ const HistoryScreen = () => {
               </Text>
               <Text style={styles.emptyStateSubtext}>
                 {error?.includes('No collection data found')
-                  ? 'Please contact your Patsanstha to upload customer data'
+                  ? 'Please contact your Organization to upload customer data'
                   : 'Collections will appear here once you start collecting'}
               </Text>
             </View>

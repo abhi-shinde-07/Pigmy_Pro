@@ -480,7 +480,7 @@ const SearchScreen = () => {
                 <FontAwesomeIcon icon={faSearch} size={48} color="#E5E7EB" />
                 <Text style={styles.noResultsTitle}>No Customer Data</Text>
                 <Text style={styles.noResultsSubtitle}>
-                  Please contact your Patsanstha to upload customer data
+                  Please contact your Organization to upload customer data
                 </Text>
               </View>
             )}
