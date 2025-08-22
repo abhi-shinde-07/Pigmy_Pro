@@ -33,12 +33,12 @@ import CollectionModal from "./components/CollectionModal.jsx";
 import SuccessTransactionPopup from "./components/SuccessTransactionScreen";
 import { styles } from "./styles/SearchScreenStyles.js";
 
-
-
 const SearchScreen = () => {
   const {
     resetSessionTimer,
     makeAuthenticatedRequest,
+    getCollectionSummary,  // Added this
+    hasActiveCollection,   // Added this
   } = useContext(AuthContext);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,7 +99,16 @@ const SearchScreen = () => {
 
         setCustomers(transformedCustomers);
         setAgentMeta(result.data.agentMeta);
-        setIsSubmitted(false); // Set based on your logic
+        
+        // Properly set submission status using AuthContext functions
+        const collectionSummary = getCollectionSummary();
+        const hasActive = hasActiveCollection();
+        
+        // If there's no active collection, it means it's submitted
+        // Or use the submitted flag from collection summary
+        const isFileSubmitted = collectionSummary?.submitted || !hasActive;
+        setIsSubmitted(isFileSubmitted);
+        
         setIsLoading(false);
       }
     } catch (error) {
@@ -110,7 +119,7 @@ const SearchScreen = () => {
       );
       setIsLoading(false);
     }
-  }, [makeAuthenticatedRequest]);
+  }, [makeAuthenticatedRequest, getCollectionSummary, hasActiveCollection]);
 
   // Initial load
   useEffect(() => {
@@ -264,8 +273,7 @@ const SearchScreen = () => {
           amount: parseFloat(amount),
           customerName: selectedCustomer.name,
           customerPhone: selectedCustomer.phone,
-          accountNo:
-            selectedCustomer.accountNumber,
+          accountNo: selectedCustomer.accountNumber,
           totalCollction: selectedCustomer.totalCollection,
           previousBalance: selectedCustomer.previousBalance,
         };
@@ -275,7 +283,7 @@ const SearchScreen = () => {
 
         setSelectedCustomer(null);
 
-        // Refresh customer data to get updated totals
+        // Refresh customer data to get updated totals and submission status
         await fetchCustomers();
 
         return true;
@@ -321,7 +329,7 @@ const SearchScreen = () => {
         <View key={customer.id} style={styles.customerCard}>
           <View style={styles.customerHeader}>
             <View style={styles.customerAvatar}>
-              <FontAwesomeIcon icon={faUser} size={20} color="#FFFFFF" />
+              <FontAwesomeIcon icon={faUser} size={18} color="#FFFFFF" />
             </View>
             <View style={styles.customerInfo}>
               <Text style={styles.customerName}>{customer.name}</Text>
@@ -340,7 +348,7 @@ const SearchScreen = () => {
             >
               <FontAwesomeIcon
                 icon={isSubmitted ? faCheckCircle : faPlus}
-                size={14}
+                size={isSubmitted ? 16 : 12}
                 color={isSubmitted ? "#9CA3AF" : "#FFFFFF"}
               />
               <Text
@@ -356,35 +364,21 @@ const SearchScreen = () => {
 
           <View style={styles.customerDetails}>
             <View style={styles.detailRow}>
-              <FontAwesomeIcon icon={faPhone} size={12} color="#6B7280" />
+              <FontAwesomeIcon icon={faPhone} size={11} color="#6B7280" />
               <Text style={styles.detailText}>{customer.phone}</Text>
             </View>
           </View>
 
-          <View style={styles.customerStats}>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Previous Balance</Text>
-              <Text style={styles.statValue}>
-                {formatCurrency(customer.previousBalance)}
+          {customer.hasCollection && (
+            <View style={styles.collectionInfoContainer}>
+              <Text style={styles.collectionInfoText}>
+                Today's Collection: {formatCurrency(customer.totalCollection)}
               </Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>
-                {customer.hasCollection ? "Last Collection" : "Collection Date"}
-              </Text>
-              <Text style={styles.statValue}>
-                {customer.hasCollection
-                  ? formatCurrency(customer.totalCollection)
-                  : formatDate(customer.lastCollection)}
-              </Text>
-            </View>
-          </View>
-
-          {customer.hasCollection && customer.collectionTime && (
-            <View style={styles.collectionTimeContainer}>
-              <Text style={styles.collectionTimeText}>
-                Last collected at: {customer.collectionTime}
-              </Text>
+              {customer.collectionTime && (
+                <Text style={styles.collectionInfoText}>
+                  Collected at: {customer.collectionTime}
+                </Text>
+              )}
             </View>
           )}
         </View>
@@ -448,6 +442,18 @@ const SearchScreen = () => {
           ) : null}
         </View>
       </View>
+
+      {/* Show submission status indicator */}
+      {isSubmitted && (
+        <View style={styles.submissionStatusContainer}>
+          <View style={styles.submissionStatusCard}>
+            <FontAwesomeIcon icon={faCheckCircle} size={16} color="#059669" />
+            <Text style={styles.submissionStatusText}>
+              Collection batch submitted
+            </Text>
+          </View>
+        </View>
+      )}
 
       <ScrollView
         style={styles.content}

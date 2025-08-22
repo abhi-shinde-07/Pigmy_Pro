@@ -17,18 +17,19 @@ export const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '700',
     fontFamily: 'DMSans-Bold',
   },
   headerCancelButton: {
     fontSize: 14,
     color: '#FFFFFF',
     fontWeight: '500',
+    fontFamily: 'DMSans-Regular',
     opacity: 0.8,
   },
   searchContainer: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 14,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
@@ -49,7 +50,7 @@ export const styles = StyleSheet.create({
     color: '#1F2937',
     paddingVertical: 12,
     paddingLeft: 12,
-    fontFamily: 'DMSans-Medium',
+    fontFamily: 'DMSans-Regular',
   },
   clearButton: {
     padding: 4,
@@ -59,29 +60,29 @@ export const styles = StyleSheet.create({
   },
   section: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sectionTitle: {
     marginTop: 15,
     fontSize: 18,
     color: '#1F2937',
-    marginBottom: 16,
+    marginBottom: 14,
     fontFamily: 'DMSans-Bold',
   },
   resultsContainer: {
-    gap: 12,
+    gap: 10,
   },
   customerCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
     elevation: 2,
     borderWidth: 1,
     borderColor: '#F1F5F9',
@@ -92,13 +93,13 @@ export const styles = StyleSheet.create({
     marginBottom: 12,
   },
   customerAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#6739B7',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   customerInfo: {
     flex: 1,
@@ -106,14 +107,13 @@ export const styles = StyleSheet.create({
   customerName: {
     fontSize: 16,
     color: '#1F2937',
-    marginBottom: 2,
+    marginBottom: 4,
     fontFamily: 'DMSans-Bold',
   },
   customerAccount: {
     fontSize: 12,
     color: '#6B7280',
-    marginBottom: 8,
-    fontFamily: 'DMSans-Medium',
+    fontFamily: 'DMSans-Regular',
   },
   collectButton: {
     backgroundColor: '#6739B7',
@@ -123,15 +123,23 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    minWidth: 80,
+    justifyContent: 'center',
   },
   collectButtonText: {
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     fontFamily: 'DMSans-Bold',
   },
+  collectButtonDisabled: {
+    backgroundColor: '#E5E7EB',
+  },
+  collectButtonTextDisabled: {
+    color: '#9CA3AF',
+  },
   customerDetails: {
-    marginBottom: 12,
+    marginBottom: -2,
     gap: 6,
   },
   detailRow: {
@@ -142,28 +150,31 @@ export const styles = StyleSheet.create({
   detailText: {
     fontSize: 14,
     color: '#6B7280',
-    fontFamily: 'DMSans-Medium',
+    fontFamily: 'DMSans-Regular',
   },
   customerStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 12,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
   },
   statItem: {
     flex: 1,
   },
+  inlineStatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
   statLabel: {
     fontSize: 12,
     color: '#6B7280',
-    marginBottom: 4,
-    fontFamily: 'DMSans-Medium',
+    fontFamily: 'DMSans-Regular',
   },
   statValue: {
     fontSize: 14,
     color: '#1F2937',
-    fontWeight: '600',
+    fontWeight: '700',
     fontFamily: 'DMSans-Bold',
   },
   noResultsContainer: {
@@ -182,7 +193,7 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
     textAlign: 'center',
-    fontFamily: 'DMSans-Medium',
+    fontFamily: 'DMSans-Regular',
   },
   loadingContainer: {
     flex: 1,
@@ -194,13 +205,22 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6B7280',
     marginTop: 12,
-    fontFamily: 'DMSans-Medium',
+    fontFamily: 'DMSans-Regular',
   },
-  collectButtonDisabled: {
-    backgroundColor: '#E5E7EB',
+  collectionInfoContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  collectButtonTextDisabled: {
-    color: '#9CA3AF',
+  collectionInfoText: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontFamily: 'DMSans-Regular',
+    fontStyle: 'italic',
   },
   collectionTimeContainer: {
     marginTop: 8,
@@ -212,7 +232,32 @@ export const styles = StyleSheet.create({
   collectionTimeText: {
     fontSize: 12,
     color: '#22C55E',
-    fontFamily: 'DMSans-Medium',
+    fontFamily: 'DMSans-Regular',
     fontStyle: 'italic',
+  },
+  // Updated submission status styles with larger icon
+  submissionStatusContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  submissionStatusCard: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  submissionStatusText: {
+    fontSize: 12,
+    color: '#059669',
+    fontFamily: 'DMSans-Bold',
+    flex: 1,
   },
 });
