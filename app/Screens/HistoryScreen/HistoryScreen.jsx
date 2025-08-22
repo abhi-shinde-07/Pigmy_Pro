@@ -1,6 +1,7 @@
 import { faReceipt, faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import React, { useContext, useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -14,7 +15,6 @@ import {
   View
 } from "react-native";
 import { AuthContext } from "../../context/AuthContext";
-
 
 // API Configuration
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
@@ -71,10 +71,19 @@ const HistoryScreen = () => {
     }
   };
 
-  // Initialize data load
+  // Initialize data load on mount
   useEffect(() => {
     fetchCurrentCollection();
   }, []);
+
+  // Auto-reload when screen comes into focus (like clicking the History tab)
+  useFocusEffect(
+    useCallback(() => {
+      // Reset loading state and fetch fresh data
+      setLoading(true);
+      fetchCurrentCollection();
+    }, [])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -86,18 +95,24 @@ const HistoryScreen = () => {
     return `₹${amount.toLocaleString("en-IN")}`;
   };
 
+  // Fixed date formatting function
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
+    const transactionDate = new Date(dateString);
     const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
 
-    if (date.toDateString() === today.toDateString()) {
+    // Normalize dates to compare only the date part (ignore time)
+    const transactionDateOnly = new Date(transactionDate.getFullYear(), transactionDate.getMonth(), transactionDate.getDate());
+    const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const yesterdayDateOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+    if (transactionDateOnly.getTime() === todayDateOnly.getTime()) {
       return "Today";
-    } else if (date.toDateString() === yesterday.toDateString()) {
+    } else if (transactionDateOnly.getTime() === yesterdayDateOnly.getTime()) {
       return "Yesterday";
     } else {
-      return date.toLocaleDateString("en-IN", {
+      return transactionDate.toLocaleDateString("en-IN", {
         day: "numeric",
         month: "short",
       });
@@ -115,13 +130,42 @@ const HistoryScreen = () => {
     return collectionData.transactions.filter((t) => t.collAmt > 0);
   };
 
-  // Sort transactions to show latest first (by time)
+  // Fixed time conversion function
+  const convertTimeToMinutes = (timeString) => {
+    if (!timeString) return 0;
+    
+    try {
+      // Handle format like "5:18:23 pm" or "2:30:15 pm"
+      const [time, period] = timeString.toLowerCase().trim().split(' ');
+      const [hours, minutes, seconds] = time.split(':').map(Number);
+      
+      let totalHours = hours;
+      
+      // Convert to 24-hour format
+      if (period === 'pm' && hours !== 12) {
+        totalHours = hours + 12;
+      } else if (period === 'am' && hours === 12) {
+        totalHours = 0; // 12 AM is 0 hours
+      }
+      
+      // Calculate total minutes
+      const totalMinutes = totalHours * 60 + minutes + (seconds || 0) / 60;
+      
+      return totalMinutes;
+    } catch (error) {
+      console.error('Error parsing time:', timeString, error);
+      return 0;
+    }
+  };
+
+  // Fixed sorting function
   const getSortedTransactions = (transactions) => {
     return transactions.sort((a, b) => {
-      // First sort by date (latest first)
+      // Parse dates properly
       const dateA = new Date(a.date);
       const dateB = new Date(b.date);
       
+      // First sort by date (latest first)
       if (dateA.getTime() !== dateB.getTime()) {
         return dateB - dateA; // Latest date first
       }
@@ -139,32 +183,6 @@ const HistoryScreen = () => {
       
       return 0;
     });
-  };
-
-  // Helper function to convert time string to minutes for comparison
-  const convertTimeToMinutes = (timeString) => {
-    if (!timeString) return 0;
-    
-    try {
-      // Handle format like "5:18:23 pm" or "2:30:15 pm"
-      const [time, period] = timeString.toLowerCase().split(' ');
-      const [hours, minutes, seconds] = time.split(':').map(Number);
-      
-      let totalMinutes = minutes + (seconds || 0) / 60;
-      
-      if (period === 'pm' && hours !== 12) {
-        totalMinutes += (hours + 12) * 60;
-      } else if (period === 'am' && hours === 12) {
-        totalMinutes += 0; // 12 AM is 0 hours
-      } else {
-        totalMinutes += hours * 60;
-      }
-      
-      return totalMinutes;
-    } catch (error) {
-      console.error('Error parsing time:', timeString, error);
-      return 0;
-    }
   };
 
   const filteredTransactions = getSortedTransactions(getCollectedTransactions());
