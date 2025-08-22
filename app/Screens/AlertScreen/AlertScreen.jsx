@@ -52,21 +52,6 @@ const AlertScreen = () => {
     fetchDashboardData();
   };
 
-  const formatMessageDate = (dateString) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-IN', { 
-        day: '2-digit', 
-        month: 'short', 
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      return 'Recently updated';
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -104,9 +89,6 @@ const AlertScreen = () => {
               <View style={styles.welcomeBanner}>
                 <Text style={styles.welcomeText}>
                   {dashboardData.patsansthaInfo.message}
-                </Text>
-                <Text style={styles.timeText}>
-                  {formatMessageDate(dashboardData.patsansthaInfo.messageUpdatedAt)}
                 </Text>
               </View>
             )}
@@ -179,31 +161,26 @@ const styles = StyleSheet.create({
   welcomeBanner: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#6739B7',
+    padding: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#6739B7',
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+    marginBottom: 16,
   },
   welcomeText: {
-    fontSize: 32,
-    color: '#6739B7',
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 12,
-    textTransform: 'capitalize',
-    fontFamily: 'DMSans-Bold',
-  },
-  timeText: {
-    fontSize: 16,
-    color: '#6B7280',
-    textAlign: 'center',
+    fontSize: 14,
+    color: '#1F2937',
+    fontWeight: '500',
+    textAlign: 'left',
     fontFamily: 'DMSans-Medium',
+    lineHeight: 20,
   },
 });
 
