@@ -65,6 +65,7 @@ export const AuthProvider = ({ children }) => {
         mobileNumber: agent.mobileNumber,
         patsansthaName: agent.patsansthaName,
         patsansthaId: agent.patsansthaId,
+        address: agent.address,
         accessToken,
         loginTime: Date.now(),
       };

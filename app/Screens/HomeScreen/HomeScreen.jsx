@@ -278,7 +278,7 @@ const HomeScreen = () => {
               {dashboardData?.patsansthaInfo?.fullname || user?.patsansthaName || 'Bank Name'}
             </Text>
             <Text style={HomeCSS.bankCode}>
-              {dashboardData?.patsansthaInfo?.patname || `ID: ${user?.patsansthaId}`}
+              {dashboardData?.patsansthaInfo?.address}
             </Text>
           </View>
         </View>

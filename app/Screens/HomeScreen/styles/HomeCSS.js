@@ -26,7 +26,7 @@ const HomeCSS = StyleSheet.create({
     backgroundColor: '#6739B7',
     paddingHorizontal: 20,
     paddingTop: 50,
-    paddingBottom: 30,
+    paddingBottom: 50,
     position: 'relative',
     overflow: 'hidden',
     minHeight: 220,

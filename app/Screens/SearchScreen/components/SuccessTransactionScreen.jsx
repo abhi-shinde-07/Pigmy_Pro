@@ -121,9 +121,6 @@ const SuccessTransactionPopup = ({
       const patsansthaName = safeProfileData.patsansthaInfo.fullname || 'ORGANIZATION';
       const currentBalance = transactionData.totalCollction + transactionData.amount + transactionData.previousBalance;
       
-      // Create comprehensive SMS message with AuthContext data
-      console.log("trasactiondata",transactionData)
-      console.log("currentBalance", currentBalance)
       const smsMessage = `${patsansthaName} Rs. ${transactionData.amount?.toLocaleString('en-IN')}.00 Received to your Acc. ${transactionData.accountNo} by ${agentName}. Available Bal. Rs. ${currentBalance}.00  Thank you.`;
 
       // Use proper SMS options for better compatibility
