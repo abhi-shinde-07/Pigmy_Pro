@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
   },
   successTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#1F2937',
     marginBottom: 4,
     textAlign: 'center',
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
   amountValue: {
     fontSize: 24,
     color: '#6739B7',
-    fontWeight: '700',
+    fontWeight: '600',
     fontFamily: 'DMSans-Bold',
   },
   detailsCard: {

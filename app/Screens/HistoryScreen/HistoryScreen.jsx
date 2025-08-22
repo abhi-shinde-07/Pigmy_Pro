@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#1F2937",
     fontFamily: "DMSans-Bold",
     marginBottom: 4,

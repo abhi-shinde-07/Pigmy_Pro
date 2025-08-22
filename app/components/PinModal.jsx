@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     color: '#1F2937',
-    fontWeight: '700',
+    fontWeight: '600',
     fontFamily: 'DMSans-Bold',
     marginBottom: 6,
   },
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   summaryAmount: {
     fontSize: 14,
     color: '#6739B7',
-    fontWeight: '700',
+    fontWeight: '600',
     fontFamily: 'DMSans-Bold',
   },
   // Numpad Styles (matching CollectionModal)

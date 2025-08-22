@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 24,
     color: '#EF4444',
-    fontWeight: '700',
+    fontWeight: '600',
     marginBottom: 8,
     fontFamily: 'DMSans-Bold',
   },

@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     width: '60%',
   },
   loadingText: {
-    fontWeight: '700',
+    fontWeight: '600',
     textAlign: 'center',
     letterSpacing: 1,
     marginTop: 4,

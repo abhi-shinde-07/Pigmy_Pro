@@ -17,14 +17,14 @@ export const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontWeight: '600',
     fontFamily: 'DMSans-Bold',
   },
   headerCancelButton: {
     fontSize: 14,
     color: '#FFFFFF',
     fontWeight: '500',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
     opacity: 0.8,
   },
   searchContainer: {
@@ -50,7 +50,7 @@ export const styles = StyleSheet.create({
     color: '#1F2937',
     paddingVertical: 12,
     paddingLeft: 12,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   clearButton: {
     padding: 4,
@@ -113,7 +113,7 @@ export const styles = StyleSheet.create({
   customerAccount: {
     fontSize: 12,
     color: '#6B7280',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   collectButton: {
     backgroundColor: '#6739B7',
@@ -129,7 +129,7 @@ export const styles = StyleSheet.create({
   collectButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
     fontFamily: 'DMSans-Bold',
   },
   collectButtonDisabled: {
@@ -150,7 +150,7 @@ export const styles = StyleSheet.create({
   detailText: {
     fontSize: 14,
     color: '#6B7280',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   customerStats: {
     paddingTop: 8,
@@ -169,12 +169,12 @@ export const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     color: '#6B7280',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   statValue: {
     fontSize: 14,
     color: '#1F2937',
-    fontWeight: '700',
+    fontWeight: '600',
     fontFamily: 'DMSans-Bold',
   },
   noResultsContainer: {
@@ -193,7 +193,7 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
     textAlign: 'center',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   loadingContainer: {
     flex: 1,
@@ -205,7 +205,7 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6B7280',
     marginTop: 12,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   collectionInfoContainer: {
     marginTop: 8,
@@ -219,7 +219,7 @@ export const styles = StyleSheet.create({
   collectionInfoText: {
     fontSize: 12,
     color: '#6B7280',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
     fontStyle: 'italic',
   },
   collectionTimeContainer: {
@@ -232,7 +232,7 @@ export const styles = StyleSheet.create({
   collectionTimeText: {
     fontSize: 12,
     color: '#22C55E',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
     fontStyle: 'italic',
   },
   // Updated submission status styles with larger icon

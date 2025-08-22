@@ -1,14 +1,14 @@
 import { useEffect, useRef } from 'react';
 
 import {
-  Animated,
-  Dimensions,
-  Easing,
-  Image,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
+    Animated,
+    Dimensions,
+    Easing,
+    Image,
+    StatusBar,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textAlign: 'center',
     marginBottom: 20,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   taglineContainer: {
     flexDirection: 'row',
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.8)',
     fontWeight: '400',
     letterSpacing: 0.5,
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   bottomSection: {
     position: 'absolute',
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.6)',
     marginBottom: 8,
     fontWeight: '400',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   brandContainer: {
     flexDirection: 'row',
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: 'rgba(255, 255, 255, 0.4)',
     fontWeight: '400',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
 });
 

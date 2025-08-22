@@ -3,17 +3,17 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import {
-  Alert,
-  Dimensions,
-  Image,
-  Linking,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Dimensions,
+    Image,
+    Linking,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   cardSubtext: {
     fontSize: 12,
     color: '#9CA3AF',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
     fontStyle: 'italic',
   },
   infoSection: {
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
   infoSubtext: {
     fontSize: 12,
     color: '#6B7280',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
   },
   noteContainer: {
     marginTop: 32,
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#4B5563',
     textAlign: 'center',
-    fontFamily: 'DMSans-Regular',
+    fontFamily: 'DMSans-Medium',
     lineHeight: 22,
   },
 });

@@ -231,7 +231,7 @@ export const dialogStyles = StyleSheet.create({
   },
   dialogTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
     fontFamily: 'DMSans-Bold',

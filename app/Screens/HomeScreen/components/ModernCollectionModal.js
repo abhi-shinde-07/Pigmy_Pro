@@ -1,19 +1,19 @@
 import {
-    faCheckCircle,
-    faExclamationTriangle,
-    faRupeeSign,
-    faUsers
+  faCheckCircle,
+  faExclamationTriangle,
+  faRupeeSign,
+  faUsers
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import React from 'react';
 import {
-    Animated,
-    Dimensions,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Animated,
+  Dimensions,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -253,14 +253,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20, // Reduced from 24
-    fontFamily: 'DM-Sans-Bold',
+    fontFamily: 'DMSans-Bold',
     color: '#1E293B',
     marginBottom: 6, // Reduced from 8
     textAlign: 'center',
   },
   message: {
     fontSize: 14, // Reduced from 16
-    fontFamily: 'DM-Sans-Medium',
+    fontFamily: 'DMSans-Medium',
     color: '#64748B',
     lineHeight: 20, // Reduced from 24
     textAlign: 'center',
@@ -288,13 +288,13 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 14, // Reduced from 16
-    fontFamily: 'DM-Sans-Bold',
+    fontFamily: 'DMSans-Bold',
     color: '#64748B',
     flex: 1,
   },
   detailValue: {
     fontSize: 14, // Reduced from 16
-    fontFamily: 'DM-Sans-Bold',
+    fontFamily: 'DMSans-Bold',
     color: '#1E293B',
   },
   actions: {
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: '#FFFFFF',
     fontSize: 14, // Reduced from 16
-    fontFamily: 'DM-Sans-Bold',
+    fontFamily: 'DMSans-Bold',
   },
   secondaryButton: {
     backgroundColor: '#F8FAFC',
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: '#64748B',
     fontSize: 14, // Reduced from 16
-    fontFamily: 'DM-Sans-Bold',
+    fontFamily: 'DMSans-Bold',
   },
 });
 
