@@ -33,7 +33,6 @@ const MainApp = () => {
     (async () => {
       try {
         await Font.loadAsync(FONTS);
-        console.log('✅ Fonts loaded');
       } catch (err) {
         console.warn('❌ Font load error:', err);
       } finally {

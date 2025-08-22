@@ -268,7 +268,6 @@ const SearchScreen = () => {
         });
 
         setCustomers(updatedCustomers);
-        console.log(selectedCustomer)
         const transactionData = {
           amount: parseFloat(amount),
           customerName: selectedCustomer.name,
