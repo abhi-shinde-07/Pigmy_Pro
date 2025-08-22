@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import {
   Animated,
   KeyboardAvoidingView,
@@ -32,27 +32,10 @@ const LoginScreen = () => {
     type: 'default'
   });
   
-  // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
+  // Animation values - Only shake animation for error states
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    // Entrance animation
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        tension: 50,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
+  // Remove entrance animation entirely to prevent input field blinking
 
   const validateForm = () => {
     const newErrors = {};
@@ -76,23 +59,23 @@ const LoginScreen = () => {
   const shakeForm = () => {
     Animated.sequence([
       Animated.timing(shakeAnim, {
-        toValue: 15,
-        duration: 100,
+        toValue: 10, // Reduced shake intensity from 15 to 10
+        duration: 80, // Slightly faster shake
         useNativeDriver: true,
       }),
       Animated.timing(shakeAnim, {
-        toValue: -15,
-        duration: 100,
+        toValue: -10,
+        duration: 80,
         useNativeDriver: true,
       }),
       Animated.timing(shakeAnim, {
-        toValue: 15,
-        duration: 100,
+        toValue: 10,
+        duration: 80,
         useNativeDriver: true,
       }),
       Animated.timing(shakeAnim, {
         toValue: 0,
-        duration: 100,
+        duration: 80,
         useNativeDriver: true,
       }),
     ]).start();
@@ -187,9 +170,7 @@ const LoginScreen = () => {
             style={[
               styles.formContainer,
               {
-                opacity: fadeAnim,
                 transform: [
-                  { translateY: slideAnim },
                   { translateX: shakeAnim }
                 ]
               }
