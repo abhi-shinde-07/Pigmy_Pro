@@ -35,21 +35,17 @@ const LoginScreen = () => {
   // Animation values - Only shake animation for error states
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
-  // Remove entrance animation entirely to prevent input field blinking
-
+  // Basic client-side validation (minimal - let backend handle main validation)
   const validateForm = () => {
     const newErrors = {};
     
+    // Only check if fields are empty, let backend handle other validations
     if (!username.trim()) {
       newErrors.username = 'Username is required';
-    } else if (username.trim().length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
     }
     
     if (!password.trim()) {
       newErrors.password = 'Password is required';
-    } else if (password.trim().length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
     }
     
     setErrors(newErrors);
@@ -59,8 +55,8 @@ const LoginScreen = () => {
   const shakeForm = () => {
     Animated.sequence([
       Animated.timing(shakeAnim, {
-        toValue: 10, // Reduced shake intensity from 15 to 10
-        duration: 80, // Slightly faster shake
+        toValue: 10,
+        duration: 80,
         useNativeDriver: true,
       }),
       Animated.timing(shakeAnim, {
@@ -98,6 +94,7 @@ const LoginScreen = () => {
   const handleLogin = async () => {
     setErrors({});
     
+    // Only basic validation - let backend handle the rest
     if (!validateForm()) {
       shakeForm();
       return;
@@ -108,23 +105,60 @@ const LoginScreen = () => {
       
       if (!result.success) {
         shakeForm();
+        
+        // Show exact backend message
         showDialog({
-          title: 'Access Denied',
-          message: result.error,
+          title: 'Login Failed',
+          message: result.message || result.error || 'Login failed',
           type: 'error',
           buttons: [
             {
-              text: 'Try Again',
+              text: 'OK',
               style: 'default',
             }
           ]
         });
+      } else {
+        // Success case - you can show success message from backend if needed
+        // showDialog({
+        //   title: 'Success',
+        //   message: result.message || 'Login successful',
+        //   type: 'success',
+        //   buttons: [
+        //     {
+        //       text: 'OK',
+        //       style: 'default',
+        //     }
+        //   ]
+        // });
       }
     } catch (error) {
       shakeForm();
+      
+      // Handle different error scenarios from backend
+      let errorMessage = 'An unexpected error occurred';
+      let errorTitle = 'Error';
+      
+      if (error.response && error.response.data) {
+        // If it's an API error with response data
+        errorMessage = error.response.data.message || error.response.data.error || errorMessage;
+        
+        // Handle specific status codes
+        if (error.response.status === 401) {
+          errorTitle = 'Authentication Failed';
+        } else if (error.response.status === 403) {
+          errorTitle = 'Access Denied';
+        } else if (error.response.status === 400) {
+          errorTitle = 'Invalid Request';
+        }
+      } else if (error.message) {
+        // Network or other errors
+        errorMessage = error.message;
+      }
+      
       showDialog({
-        title: 'Error',
-        message: 'An unexpected error occurred. Please try again.',
+        title: errorTitle,
+        message: errorMessage,
         type: 'error',
         buttons: [
           {

@@ -34,60 +34,71 @@ export const AuthProvider = ({ children }) => {
     }, SESSION_TIMEOUT);
   };
 
-  const login = async (agentno, password) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}${LOGIN_ENDPOINT}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agentno: agentno.trim(), password: password.trim() }),
-      });
 
-      const data = await response.json();
-      if (!response.ok) {
-        let errorMessage = 'Login failed. Please try again.';
-        switch (response.status) {
-          case 400: errorMessage = 'Agent number and password are required.'; break;
-          case 401: errorMessage = 'Invalid credentials.'; break;
-          case 403: errorMessage = data.message || 'Your account is inactive.'; break;
-          case 404: errorMessage = 'Agent not found.'; break;
-          case 500: errorMessage = 'Server error.'; break;
-          default:  errorMessage = data.message || 'Unexpected error.';
-        }
-        return { success: false, error: errorMessage };
-      }
 
-      const { agent, accessToken } = data.data;
-      const userData = {
-        _id: agent._id,
-        agentname: agent.agentname,
-        agentno: agent.agentno,
-        mobileNumber: agent.mobileNumber,
-        patsansthaName: agent.patsansthaName,
-        patsansthaId: agent.patsansthaId,
-        address: agent.address,
-        accessToken,
-        loginTime: Date.now(),
+const login = async (agentno, password) => {
+  setIsLoading(true);
+  try {
+    const response = await fetch(`${API_BASE_URL}${LOGIN_ENDPOINT}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agentno: agentno.trim(), password: password.trim() }),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      // Return exact backend message - no frontend override
+      return { 
+        success: false, 
+        error: data.message || 'Login failed',
+        message: data.message || 'Login failed'
       };
-
-      setUser(userData);
-      await SecureStore.setItemAsync('session_user', JSON.stringify(userData));
-      await SecureStore.setItemAsync('session_timestamp', Date.now().toString());
-      await SecureStore.setItemAsync('access_token', accessToken);
-
-      resetSessionTimer();
-      await fetchDashboardData();
-
-      return { success: true, user: userData };
-    } catch (error) {
-      if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
-        return { success: false, error: 'Network error. Please check your connection.' };
-      }
-      return { success: false, error: 'An unexpected error occurred.' };
-    } finally {
-      setIsLoading(false);
     }
-  };
+
+    const { agent, accessToken } = data.data;
+    const userData = {
+      _id: agent._id,
+      agentname: agent.agentname,
+      agentno: agent.agentno,
+      mobileNumber: agent.mobileNumber,
+      patsansthaName: agent.patsansthaName,
+      patsansthaId: agent.patsansthaId,
+      address: agent.address,
+      accessToken,
+      loginTime: Date.now(),
+    };
+
+    setUser(userData);
+    await SecureStore.setItemAsync('session_user', JSON.stringify(userData));
+    await SecureStore.setItemAsync('session_timestamp', Date.now().toString());
+    await SecureStore.setItemAsync('access_token', accessToken);
+
+    resetSessionTimer();
+    await fetchDashboardData();
+
+    return { 
+      success: true, 
+      user: userData,
+      message: data.message || 'Login successful'
+    };
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
+      return { 
+        success: false, 
+        error: 'Network error. Please check your connection.',
+        message: 'Network error. Please check your connection.'
+      };
+    }
+    return { 
+      success: false, 
+      error: 'An unexpected error occurred.',
+      message: 'An unexpected error occurred.'
+    };
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const logout = async (message) => {
     try {
