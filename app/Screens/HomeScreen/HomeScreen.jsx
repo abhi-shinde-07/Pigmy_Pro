@@ -25,7 +25,7 @@ import {
 } from 'react-native';
 import PinModal from '../../components/PinModal';
 import { AuthContext } from '../../context/AuthContext';
-import ModernCollectionModal from './components/ModernCollectionModal'; // Add this import
+import ModernCollectionModal from './components/ModernCollectionModal';
 import HomeCSS from './styles/HomeCSS';
 
 // Bank Logo Component
@@ -68,7 +68,6 @@ const HomeScreen = () => {
       const result = await fetchDashboardData();
 
       if (!result) {
-        // Instead of throwing, we set default empty dashboard to prevent crash
         setError('Service is currently unavailable. Please try again later.');
         return;
       }
@@ -80,7 +79,6 @@ const HomeScreen = () => {
     }
   }, [fetchDashboardData]);
 
-  // Add focus effect to reload data when screen is focused
   useFocusEffect(
     useCallback(() => {
       if (user) {
@@ -89,7 +87,6 @@ const HomeScreen = () => {
     }, [user, loadDashboardData])
   );
 
-  // Keep the original useEffect for initial load
   useEffect(() => {
     if (user && !dashboardData) {
       loadDashboardData();
@@ -148,7 +145,6 @@ const HomeScreen = () => {
         setPinProcessing(false);
         await loadDashboardData();
         
-        // Show success modal instead of Alert
         setCollectionModalType('success');
         setModalMessage(result.message || 'Collection submitted successfully!');
         setShowCollectionModal(true);
@@ -159,7 +155,6 @@ const HomeScreen = () => {
         if (response.status === 401) return false;
         
         setShowPinModal(false);
-        // Show error modal instead of Alert
         setCollectionModalType('error');
         setModalMessage(errorMessage);
         setShowCollectionModal(true);
@@ -170,7 +165,6 @@ const HomeScreen = () => {
       setPinProcessing(false);
       setShowPinModal(false);
       
-      // Show error modal instead of Alert
       setCollectionModalType('error');
       setModalMessage('Network error. Please check your internet connection.');
       setShowCollectionModal(true);
@@ -219,30 +213,6 @@ const HomeScreen = () => {
   const formatCurrency = (amount) => `₹${amount.toLocaleString('en-IN')}`;
   const statsData = getStatsData();
 
-  if (loading || authLoading) {
-    return (
-      <SafeAreaView style={HomeCSS.container}>
-        <View style={HomeCSS.loadingContainer}>
-          <ActivityIndicator size="large" color="#6739B7" />
-          <Text style={HomeCSS.loadingText}>Loading Dashboard...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (error && !dashboardData) {
-    return (
-      <SafeAreaView style={HomeCSS.container}>
-        <View style={HomeCSS.loadingContainer}>
-          <Text style={HomeCSS.errorText}>{error}</Text>
-          <TouchableOpacity style={HomeCSS.retryButton} onPress={loadDashboardData}>
-            <Text style={HomeCSS.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   if (!user) {
     return (
       <SafeAreaView style={HomeCSS.container}>
@@ -257,6 +227,7 @@ const HomeScreen = () => {
     <SafeAreaView style={HomeCSS.container}>
       <StatusBar barStyle="light-content" backgroundColor="#6739B7" />
       
+      {/* 🔹 Header is always visible */}
       <View style={HomeCSS.header}>
         <Image 
           source={require('../../../assets/images/HomeScreen.png')} 
@@ -284,79 +255,99 @@ const HomeScreen = () => {
         </View>
       </View>
 
+      {/* 🔹 Only below section reloads */}
       <ScrollView 
         style={HomeCSS.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <View style={HomeCSS.collectionCard}>
-          <View style={HomeCSS.collectionHeader}>
-            <FontAwesomeIcon icon={faCalendarDay} size={20} color="#6739B7" />
-            <Text style={HomeCSS.collectionHeaderText}>Today's Collection</Text>
+        {loading || authLoading ? (
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center", minHeight: 300 }}>
+            <ActivityIndicator size="large" color="#6739B7" />
+            <Text style={HomeCSS.loadingText}>Loading Dashboard...</Text>
           </View>
-          <Text style={HomeCSS.collectionAmount}>{formatCurrency(statsData.totalCollected)}</Text>
-          <Text style={HomeCSS.collectionSubtext}>From {statsData.collectedCustomers} customers</Text>
-          <View style={HomeCSS.collectionActions}>
-            <TouchableOpacity 
-              style={[
-                HomeCSS.actionButton, 
-                (dashboardData?.currentCollection?.submitted || statsData.collectedCustomers === 0 || submitting || pinProcessing) 
-                  ? { opacity: 0.5 } 
-                  : {}
-              ]}
-              disabled={dashboardData?.currentCollection?.submitted || statsData.collectedCustomers === 0 || submitting || pinProcessing}
-              onPress={handleSubmitCollection}
-            >
-              {(submitting || pinProcessing) ? (
-                <ActivityIndicator size={16} color="#FFFFFF" />
-              ) : (
-                <FontAwesomeIcon icon={faUpload} size={16} color="#FFFFFF" />
-              )}
-              <Text style={HomeCSS.actionButtonText}>
-                {(submitting || pinProcessing) ? 'Processing...' : 
-                 dashboardData?.currentCollection?.submitted ? 'Submitted' : 'Submit'}
-              </Text>
+
+        ) : error && !dashboardData ? (
+          <View style={HomeCSS.loadingContainer}>
+            <Text style={HomeCSS.errorText}>{error}</Text>
+            <TouchableOpacity style={HomeCSS.retryButton} onPress={loadDashboardData}>
+              <Text style={HomeCSS.retryButtonText}>Retry</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        ) : (
+          <>
+            {/* Today's Collection Card */}
+            <View style={HomeCSS.collectionCard}>
+              <View style={HomeCSS.collectionHeader}>
+                <FontAwesomeIcon icon={faCalendarDay} size={20} color="#6739B7" />
+                <Text style={HomeCSS.collectionHeaderText}>Today's Collection</Text>
+              </View>
+              <Text style={HomeCSS.collectionAmount}>{formatCurrency(statsData.totalCollected)}</Text>
+              <Text style={HomeCSS.collectionSubtext}>From {statsData.collectedCustomers} customers</Text>
+              <View style={HomeCSS.collectionActions}>
+                <TouchableOpacity 
+                  style={[
+                    HomeCSS.actionButton, 
+                    (dashboardData?.currentCollection?.submitted || statsData.collectedCustomers === 0 || submitting || pinProcessing) 
+                      ? { opacity: 0.5 } 
+                      : {}
+                  ]}
+                  disabled={dashboardData?.currentCollection?.submitted || statsData.collectedCustomers === 0 || submitting || pinProcessing}
+                  onPress={handleSubmitCollection}
+                >
+                  {(submitting || pinProcessing) ? (
+                    <ActivityIndicator size={16} color="#FFFFFF" />
+                  ) : (
+                    <FontAwesomeIcon icon={faUpload} size={16} color="#FFFFFF" />
+                  )}
+                  <Text style={HomeCSS.actionButtonText}>
+                    {(submitting || pinProcessing) ? 'Processing...' : 
+                     dashboardData?.currentCollection?.submitted ? 'Submitted' : 'Submit'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
 
-        <View style={HomeCSS.statsContainer}>
-          <View style={HomeCSS.statsRow}>
-            <View style={HomeCSS.statCard}>
-              <View style={[HomeCSS.statIcon, { backgroundColor: '#EBF8FF' }]}>
-                <FontAwesomeIcon icon={faUsers} size={20} color="#3182CE" />
+            {/* Stats */}
+            <View style={HomeCSS.statsContainer}>
+              <View style={HomeCSS.statsRow}>
+                <View style={HomeCSS.statCard}>
+                  <View style={[HomeCSS.statIcon, { backgroundColor: '#EBF8FF' }]}>
+                    <FontAwesomeIcon icon={faUsers} size={20} color="#3182CE" />
+                  </View>
+                  <Text style={HomeCSS.statNumber}>{statsData.totalCustomers}</Text>
+                  <Text style={HomeCSS.statLabel}>Total Customers</Text>
+                </View>
+                <View style={HomeCSS.statCard}>
+                  <View style={[HomeCSS.statIcon, { backgroundColor: '#FEF5E7' }]}>
+                    <FontAwesomeIcon icon={faClockRotateLeft} size={20} color="#F6AD55" />
+                  </View>
+                  <Text style={HomeCSS.statNumber}>{statsData.remainingCustomers}</Text>
+                  <Text style={HomeCSS.statLabel}>Remaining</Text>
+                </View>
               </View>
-              <Text style={HomeCSS.statNumber}>{statsData.totalCustomers}</Text>
-              <Text style={HomeCSS.statLabel}>Total Customers</Text>
-            </View>
-            <View style={HomeCSS.statCard}>
-              <View style={[HomeCSS.statIcon, { backgroundColor: '#FEF5E7' }]}>
-                <FontAwesomeIcon icon={faClockRotateLeft} size={20} color="#F6AD55" />
+              <View style={HomeCSS.statsRow}>
+                <View style={HomeCSS.statCard}>
+                  <View style={[HomeCSS.statIcon, { backgroundColor: '#F0FDF4' }]}>
+                    <FontAwesomeIcon icon={faCheckCircle} size={20} color="#22C55E" />
+                  </View>
+                  <Text style={HomeCSS.statNumber}>{statsData.collectedCustomers}</Text>
+                  <Text style={HomeCSS.statLabel}>Collected</Text>
+                </View>
+                <View style={HomeCSS.statCard}>
+                  <View style={[HomeCSS.statIcon, { backgroundColor: '#F3E8FF' }]}>
+                    <FontAwesomeIcon icon={faChartLine} size={20} color="#8B5CF6" />
+                  </View>
+                  <Text style={HomeCSS.statNumber}>{statsData.successRate}%</Text>
+                  <Text style={HomeCSS.statLabel}>Success Rate</Text>
+                </View>
               </View>
-              <Text style={HomeCSS.statNumber}>{statsData.remainingCustomers}</Text>
-              <Text style={HomeCSS.statLabel}>Remaining</Text>
             </View>
-          </View>
-          <View style={HomeCSS.statsRow}>
-            <View style={HomeCSS.statCard}>
-              <View style={[HomeCSS.statIcon, { backgroundColor: '#F0FDF4' }]}>
-                <FontAwesomeIcon icon={faCheckCircle} size={20} color="#22C55E" />
-              </View>
-              <Text style={HomeCSS.statNumber}>{statsData.collectedCustomers}</Text>
-              <Text style={HomeCSS.statLabel}>Collected</Text>
-            </View>
-            <View style={HomeCSS.statCard}>
-              <View style={[HomeCSS.statIcon, { backgroundColor: '#F3E8FF' }]}>
-                <FontAwesomeIcon icon={faChartLine} size={20} color="#8B5CF6" />
-              </View>
-              <Text style={HomeCSS.statNumber}>{statsData.successRate}%</Text>
-              <Text style={HomeCSS.statLabel}>Success Rate</Text>
-            </View>
-          </View>
-        </View>
+          </>
+        )}
       </ScrollView>
 
-      {/* Modern Collection Modal */}
+      {/* Modals */}
       <ModernCollectionModal
         visible={showCollectionModal}
         onClose={handleCollectionModalClose}
@@ -367,7 +358,6 @@ const HomeScreen = () => {
         message={modalMessage}
       />
 
-      {/* PIN Modal */}
       <PinModal
         visible={showPinModal}
         onClose={handlePinModalClose}
