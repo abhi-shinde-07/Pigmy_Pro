@@ -26,6 +26,10 @@
       "edgeToEdgeEnabled": true,
       "package": "com.rutikrtr.PigmyPro"
     },
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#6739B7"
+    },
     "web": {
       "bundler": "metro",
       "output": "static",
