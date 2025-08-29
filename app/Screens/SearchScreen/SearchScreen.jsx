@@ -68,9 +68,6 @@ const SearchScreen = () => {
         }
       );
 
-      if (!response) {
-        throw new Error("No response received");
-      }
 
       const result = await response.json();
 
@@ -112,11 +109,6 @@ const SearchScreen = () => {
         setIsLoading(false);
       }
     } catch (error) {
-      console.error("Error fetching customers:", error);
-      Alert.alert(
-        "Error", 
-        error.message || "Failed to fetch customer data. Please try again."
-      );
       setIsLoading(false);
     }
   }, [makeAuthenticatedRequest, getCollectionSummary, hasActiveCollection]);

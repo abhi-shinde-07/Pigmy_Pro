@@ -82,21 +82,9 @@ const ProfileScreen = () => {
     );
   }
 
+
   // Handle case where getUserProfileData returns null
-  const safeProfileData = profileData || {
-    agentInfo: {
-      agentname: user.agentname,
-      agentno: user.agentno,
-      mobileNumber: user.mobileNumber,
-      email: null,
-      joinDate: null,
-    },
-    patsansthaInfo: {
-      fullname: user.patsansthaName,
-      patsansthaId: user.patsansthaId,
-      patname: null,
-    },
-  };
+  const safeProfileData = profileData;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -206,9 +194,10 @@ const ProfileScreen = () => {
                 <FontAwesomeIcon icon={faCalendarAlt} size={16} color="#6739B7" />
               </View>
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Join Date</Text>
+                <Text style={styles.detailLabel}>Exp Date</Text>
                 <Text style={styles.detailValue}>
-                  {safeProfileData.agentInfo.joinDate || 'Not available'}
+                {/* show proper date is dd/mm/yyyy */}
+                  {safeProfileData.agentInfo.expDate ? new Date(safeProfileData.agentInfo.expDate).toLocaleDateString('en-GB') : 'N/A'}
                 </Text>
               </View>
             </View>

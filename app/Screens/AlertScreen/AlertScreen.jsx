@@ -40,7 +40,6 @@ const AlertScreen = () => {
       }
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching dashboard data:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);

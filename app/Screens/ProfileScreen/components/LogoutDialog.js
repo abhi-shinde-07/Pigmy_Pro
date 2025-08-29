@@ -1,15 +1,15 @@
 import {
-    faExclamationTriangle,
-    faTimes,
+  faExclamationTriangle,
+  faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { useEffect, useRef } from 'react';
 import {
-    Animated,
-    Modal,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Modal,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { dialogStyles } from '../styles/DialogStyles';
 
@@ -136,8 +136,8 @@ const LogoutDialog = ({
               <View style={dialogStyles.dialogIconContainer}>
                 <FontAwesomeIcon icon={faExclamationTriangle} size={24} color="#EF4444" />
               </View>
-              <Text style={dialogStyles.dialogTitle}>Sign Out</Text>
-              <Text style={dialogStyles.dialogSubtitle}>Are you sure you want to sign out?</Text>
+              <Text style={dialogStyles.dialogTitle}>Log Out</Text>
+              <Text style={dialogStyles.dialogSubtitle}>Are you sure you want to log out ?</Text>
             </View>
 
             {/* Dialog Actions */}
@@ -155,7 +155,7 @@ const LogoutDialog = ({
                 onPress={handleConfirm}
                 activeOpacity={0.8}
               >
-                <Text style={dialogStyles.confirmButtonText}>Sign Out</Text>
+                <Text style={dialogStyles.confirmButtonText}>Confirm</Text>
               </TouchableOpacity>
             </View>
           </View>

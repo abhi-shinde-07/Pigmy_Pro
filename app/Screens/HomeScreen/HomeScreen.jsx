@@ -50,6 +50,10 @@ const HomeScreen = () => {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   
+  // ✅ Add timestamp to track last API call
+  const [lastFetched, setLastFetched] = useState(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinProcessing, setPinProcessing] = useState(false);
   
@@ -60,44 +64,66 @@ const HomeScreen = () => {
   
   const baseURL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
-  const loadDashboardData = useCallback(async () => {
+  // ✅ Modified loadDashboardData with force parameter and timestamp check
+  const loadDashboardData = useCallback(async (force = false) => {
+    if (!user) return;
+
+    // ⏱️ Avoid repeated API calls unless forced (refresh) or data is stale
+    const CACHE_DURATION = 60000; // 60 seconds
+    if (!force && lastFetched && Date.now() - lastFetched < CACHE_DURATION) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setError(null);
       setLoading(true);
-
       const result = await fetchDashboardData();
 
       if (!result) {
         setError('Service is currently unavailable. Please try again later.');
         return;
       }
+
+      // ✅ Update timestamp after successful fetch
+      setLastFetched(Date.now());
+      setInitialLoadComplete(true);
+      
     } catch (err) {
       console.error('Dashboard fetch error:', err);
       setError('Service is currently unavailable. Please try again later.');
     } finally {
       setLoading(false);
     }
-  }, [fetchDashboardData]);
+  }, [user, fetchDashboardData, lastFetched]);
 
+  // ✅ Fixed useFocusEffect - only calls API if data is stale or force refresh
   useFocusEffect(
     useCallback(() => {
-      if (user) {
-        loadDashboardData();
+      if (user && !initialLoadComplete) {
+        // First time focus - always load
+        loadDashboardData(true);
+      } else if (user) {
+        // Subsequent focus - only load if data is stale
+        loadDashboardData(false);
       }
-    }, [user, loadDashboardData])
+    }, [user, loadDashboardData, initialLoadComplete])
   );
 
+  // ✅ Simplified useEffect - only handles initial state
   useEffect(() => {
-    if (user && !dashboardData) {
-      loadDashboardData();
-    } else if (dashboardData) {
+    if (user && dashboardData && !initialLoadComplete) {
+      // If dashboardData exists from context, mark as loaded
+      setInitialLoadComplete(true);
       setLoading(false);
+      setLastFetched(Date.now());
     }
-  }, [user, dashboardData, loadDashboardData]);
+  }, [user, dashboardData, initialLoadComplete]);
 
+  // ✅ Refresh always forces API call
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadDashboardData();
+    await loadDashboardData(true); // Force refresh
     setRefreshing(false);
   }, [loadDashboardData]);
 
@@ -143,7 +169,8 @@ const HomeScreen = () => {
       if (response.ok && result.success) {
         setShowPinModal(false);
         setPinProcessing(false);
-        await loadDashboardData();
+        // ✅ Force refresh after successful submission
+        await loadDashboardData(true);
         
         setCollectionModalType('success');
         setModalMessage(result.message || 'Collection submitted successfully!');
@@ -270,7 +297,7 @@ const HomeScreen = () => {
         ) : error && !dashboardData ? (
           <View style={HomeCSS.loadingContainer}>
             <Text style={HomeCSS.errorText}>{error}</Text>
-            <TouchableOpacity style={HomeCSS.retryButton} onPress={loadDashboardData}>
+            <TouchableOpacity style={HomeCSS.retryButton} onPress={() => loadDashboardData(true)}>
               <Text style={HomeCSS.retryButtonText}>Retry</Text>
             </TouchableOpacity>
           </View>

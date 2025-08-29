@@ -348,18 +348,6 @@ const SuccessTransactionPopup = ({
               </Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Date</Text>
-              <Text style={styles.detailValue}>
-                {formatDate(transactionData.date)}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Time</Text>
-              <Text style={styles.detailValue}>
-                {formatTime(transactionData.date)}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Agent</Text>
               <Text style={styles.detailValue}>
                 {safeProfileData.agentInfo.agentname?.toUpperCase() || 'N/A'}

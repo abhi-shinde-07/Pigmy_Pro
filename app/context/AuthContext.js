@@ -4,13 +4,13 @@ import { AppState, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react
 
 export const AuthContext = createContext();
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 const LOGIN_ENDPOINT = '/agent/login';
 const LOGOUT_ENDPOINT = '/agent/logout';
 const DASHBOARD_ENDPOINT = '/agent/dashboard';
 
 export const AuthProvider = ({ children }) => {
-  const SESSION_TIMEOUT = 1000 * 60 * 60 * 12;
+  const SESSION_TIMEOUT =   12 * 60 * 60 * 1000;
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }) => {
 
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogData, setDialogData] = useState({ title: '', message: '', type: 'info', buttonText: 'OK' });
+  const isLoggingOut = useRef(false); // 🔑 Prevent multiple dialogs
 
   const showDialog = ({ title, message, type = 'info', buttonText = 'OK' }) => {
     setDialogData({ title, message, type, buttonText });
@@ -30,77 +31,79 @@ export const AuthProvider = ({ children }) => {
   const resetSessionTimer = () => {
     if (sessionTimer.current) clearTimeout(sessionTimer.current);
     sessionTimer.current = setTimeout(() => {
-      logout('Session expired after 12 hours.');
+      logout('You Have been logged out due to inactivity.');
     }, SESSION_TIMEOUT);
   };
 
+  const login = async (agentno, password) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}${LOGIN_ENDPOINT}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentno: agentno.trim(), password: password.trim() }),
+      });
 
+      const data = await response.json();
 
-const login = async (agentno, password) => {
-  setIsLoading(true);
-  try {
-    const response = await fetch(`${API_BASE_URL}${LOGIN_ENDPOINT}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agentno: agentno.trim(), password: password.trim() }),
-    });
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.message || 'Login failed',
+          message: data.message || 'Login failed',
+        };
+      }
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      // Return exact backend message - no frontend override
-      return { 
-        success: false, 
-        error: data.message || 'Login failed',
-        message: data.message || 'Login failed'
+      const { agent, accessToken } = data.data;
+
+      const userData = {
+        _id: agent._id,
+        agentname: agent.agentname,
+        agentno: agent.agentno,
+        mobileNumber: agent.mobileNumber,
+        patsansthaName: agent.patsansthaName,
+        patsansthaId: agent.patsansthaId,
+        address: agent.address,
+        expDate: agent.expDate,
+        accessToken,
+        loginTime: Date.now(),
       };
-    }
 
-    const { agent, accessToken } = data.data;
-    const userData = {
-      _id: agent._id,
-      agentname: agent.agentname,
-      agentno: agent.agentno,
-      mobileNumber: agent.mobileNumber,
-      patsansthaName: agent.patsansthaName,
-      patsansthaId: agent.patsansthaId,
-      address: agent.address,
-      accessToken,
-      loginTime: Date.now(),
-    };
+      setUser(userData);
+      await SecureStore.setItemAsync('session_user', JSON.stringify(userData));
+      await SecureStore.setItemAsync('session_timestamp', Date.now().toString());
+      await SecureStore.setItemAsync('access_token', accessToken);
 
-    setUser(userData);
-    await SecureStore.setItemAsync('session_user', JSON.stringify(userData));
-    await SecureStore.setItemAsync('session_timestamp', Date.now().toString());
-    await SecureStore.setItemAsync('access_token', accessToken);
+      resetSessionTimer();
+      await fetchDashboardData();
 
-    resetSessionTimer();
-    await fetchDashboardData();
-
-    return { 
-      success: true, 
-      user: userData,
-      message: data.message || 'Login successful'
-    };
-  } catch (error) {
-    if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
-      return { 
-        success: false, 
-        error: 'Network error. Please check your connection.',
-        message: 'Network error. Please check your connection.'
+      return {
+        success: true,
+        user: userData,
+        message: data.message || 'Login successful',
       };
+    } catch (error) {
+      if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
+        return {
+          success: false,
+          error: 'Network error. Please check your connection.',
+          message: 'Network error. Please check your connection.',
+        };
+      }
+      return {
+        success: false,
+        error: 'An unexpected error occurred.',
+        message: 'An unexpected error occurred.',
+      };
+    } finally {
+      setIsLoading(false);
     }
-    return { 
-      success: false, 
-      error: 'An unexpected error occurred.',
-      message: 'An unexpected error occurred.'
-    };
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const logout = async (message) => {
+    if (isLoggingOut.current) return; // 🔑 prevent duplicate calls
+    isLoggingOut.current = true;
+
     try {
       const accessToken = await SecureStore.getItemAsync('access_token');
       if (accessToken) {
@@ -111,6 +114,7 @@ const login = async (agentno, password) => {
           });
         } catch {}
       }
+
       setUser(null);
       setDashboardData(null);
       clearTimeout(sessionTimer.current);
@@ -120,7 +124,6 @@ const login = async (agentno, password) => {
 
       if (message) {
         showDialog({
-          title: 'Session Ended',
           message,
           type: message.includes('expired') ? 'warning' : 'info',
           buttonText: 'Understood',
@@ -128,6 +131,11 @@ const login = async (agentno, password) => {
       }
     } catch (error) {
       console.error('Logout error:', error);
+    } finally {
+      // Reset flag after small delay (so another logout can show popup later if needed)
+      setTimeout(() => {
+        isLoggingOut.current = false;
+      }, 500);
     }
   };
 
@@ -147,10 +155,10 @@ const login = async (agentno, password) => {
             resetSessionTimer();
             await fetchDashboardData();
           } else {
-            await logout('Session expired. Please login again.');
+            await logout('Session expired. Please log in again.');
           }
         } else {
-          await logout('Session expired after 12 hours');
+          await logout('Session expired due to inactivity. Please log in again.');
         }
       }
     } catch (error) {
@@ -186,7 +194,7 @@ const login = async (agentno, password) => {
 
       if (response.status === 401) {
         if (!url.includes('/submit-collection') && !url.includes('/collection/') && !url.includes('/add-collection')) {
-          await logout('Session expired. Please login again.');
+          await logout('Your account has logged in another device.');
           return null;
         }
       }
@@ -232,6 +240,7 @@ const login = async (agentno, password) => {
         mobileNumber: user.mobileNumber,
         status: dashboardData?.agentInfo?.status || 'unknown',
         loginTime: user.loginTime,
+        expDate: user.expDate
       },
       patsansthaInfo: {
         fullname: user.patsansthaName || dashboardData?.patsansthaInfo?.fullname || '',
@@ -243,7 +252,7 @@ const login = async (agentno, password) => {
         currentCollection: dashboardData?.currentCollection || null,
         totalTransactions: dashboardData?.totalTransactions || 0,
         collectionStatus: dashboardData?.collectionStatus || null,
-      }
+      },
     };
   };
 
@@ -296,7 +305,6 @@ const login = async (agentno, password) => {
       <Modal transparent visible={dialogVisible} animationType="fade" onRequestClose={closeDialog}>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalBox, dialogData.type === 'warning' ? styles.warningBorder : styles.infoBorder]}>
-            <Text style={styles.modalTitle}>{dialogData.title}</Text>
             <Text style={styles.modalMessage}>{dialogData.message}</Text>
             <TouchableOpacity style={styles.modalButton} onPress={closeDialog}>
               <Text style={styles.modalButtonText}>{dialogData.buttonText}</Text>
@@ -314,9 +322,9 @@ const styles = StyleSheet.create({
   warningBorder: { borderColor: '#ff9800' },
   infoBorder: { borderColor: '#2196f3' },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 10 },
-  modalMessage: { fontSize: 16, color: '#333', marginBottom: 20 },
-  modalButton: { backgroundColor: '#2196f3', borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
-  modalButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  modalMessage: { fontSize: 16, color: '#333', marginBottom: 20 , textAlign: 'center', fontFamily: 'DMSans-Medium',},
+  modalButton: { backgroundColor: '#2196f3', borderRadius: 8, paddingVertical: 10, alignItems: 'center',fontFamily: 'DMSans-Bold', },
+  modalButtonText: { color: '#fff', fontSize: 16,fontFamily: 'DMSans-Bold',},
 });
 
 export default AuthProvider;
