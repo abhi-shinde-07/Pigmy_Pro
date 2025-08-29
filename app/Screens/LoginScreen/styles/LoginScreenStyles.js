@@ -320,3 +320,5 @@ export const spacing = {
   lg: 24,
   xl: 40,
 };
+
+export default {};

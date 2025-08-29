@@ -263,3 +263,5 @@ export const styles = StyleSheet.create({
     fontFamily: 'DMSans-Bold',
   },
 });
+
+export default {};

@@ -25,3 +25,5 @@ export const profileData = {
   "message": "Profile data retrieved successfully",
   "success": true
 };
+
+export default {};

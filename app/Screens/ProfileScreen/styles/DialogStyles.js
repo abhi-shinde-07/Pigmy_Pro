@@ -108,3 +108,5 @@ export const dialogStyles = StyleSheet.create({
     fontFamily: 'DMSans-Bold',
   },
 });
+
+export default {};

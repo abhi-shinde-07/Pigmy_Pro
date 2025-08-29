@@ -6,7 +6,7 @@ import {
   faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { Audio } from 'expo-av';
+import { Audio } from 'expo-audio';
 import * as SMS from 'expo-sms';
 import { useContext, useEffect, useRef, useState } from 'react';
 import {
